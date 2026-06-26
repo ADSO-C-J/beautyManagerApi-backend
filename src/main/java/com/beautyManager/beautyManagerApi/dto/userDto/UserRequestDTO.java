@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.dto;
+package com.beautyManager.beautyManagerApi.dto.userDto;
 
 import com.beautyManager.beautyManagerApi.enums.UserRole;
 import jakarta.validation.constraints.*;

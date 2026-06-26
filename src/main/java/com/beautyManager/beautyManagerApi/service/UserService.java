@@ -1,7 +1,7 @@
 package com.beautyManager.beautyManagerApi.service;
 
-import com.beautyManager.beautyManagerApi.dto.UserRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.UserResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.userDto.UserRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.userDto.UserResponseDTO;
 
 import java.util.List;
 import java.util.UUID;
