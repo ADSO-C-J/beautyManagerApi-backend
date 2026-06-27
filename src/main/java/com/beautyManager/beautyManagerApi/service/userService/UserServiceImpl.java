@@ -1,7 +1,7 @@
-package com.beautyManager.beautyManagerApi.service;
+package com.beautyManager.beautyManagerApi.service.userService;
 
-import com.beautyManager.beautyManagerApi.dto.userDto.UserResponseDTO;
-import com.beautyManager.beautyManagerApi.dto.userDto.UserRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.UserResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.UserRequestDTO;
 import com.beautyManager.beautyManagerApi.entity.User;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
