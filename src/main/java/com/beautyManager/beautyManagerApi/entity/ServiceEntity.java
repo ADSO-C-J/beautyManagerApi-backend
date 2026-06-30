@@ -1,54 +1,59 @@
 package com.beautyManager.beautyManagerApi.entity;
 
-import com.beautyManager.beautyManagerApi.enums.UserRole;
+import com.beautyManager.beautyManagerApi.enums.TypeServices;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "services")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+@SQLRestriction("deleted_at IS NULL")
+public class ServiceEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+    @Column(name = "business_id", nullable = false)
+    private UUID businessId;
 
     @Column(nullable = false)
     private String name;
 
-    private String phone;
+    private String description;
 
-    @Column(name = "avatar_url")
-    private String avatarUrl;
-
+    @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "role", columnDefinition = "user_role")
-    private UserRole role;
+    @Column(nullable = false)
+    private TypeServices category;
+
+    @Column(name = "duration_min", nullable = false)
+    private Integer durationMin;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
+
+    @Column(name = "is_popular")
+    private Boolean isPopular;
 
     @Column(name = "is_active")
-    private Boolean isActive = true;
+    private Boolean isActive;
 
-    @Column(name = "email_verified_at")
-    private LocalDateTime emailVerifiedAt;
-
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
+    @Column(name = "display_order")
+    private Integer displayOrder;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -60,4 +65,5 @@ public class User {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
 }

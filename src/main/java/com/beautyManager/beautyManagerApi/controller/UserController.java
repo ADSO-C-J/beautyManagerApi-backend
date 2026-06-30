@@ -2,7 +2,7 @@ package com.beautyManager.beautyManagerApi.controller;
 
 import com.beautyManager.beautyManagerApi.dto.UserRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.UserResponseDTO;
-import com.beautyManager.beautyManagerApi.service.UserService;
+import com.beautyManager.beautyManagerApi.service.userService.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

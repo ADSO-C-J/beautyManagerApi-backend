@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.service;
+package com.beautyManager.beautyManagerApi.service.userService;
 
 import com.beautyManager.beautyManagerApi.dto.UserRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.UserResponseDTO;
