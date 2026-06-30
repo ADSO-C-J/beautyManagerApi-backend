@@ -4,7 +4,9 @@ import com.beautyManager.beautyManagerApi.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -35,8 +37,8 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "user_role")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "role", columnDefinition = "user_role")
     private UserRole role;
 
     @Column(name = "is_active")
