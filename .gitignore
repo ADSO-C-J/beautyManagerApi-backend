@@ -39,3 +39,6 @@ build/
 
 # ignore local properties
 src/main/resources/application-local.properties
+# Archivos temporales de compilación/ejecución
+backend_run.txt
+compile*.txt
