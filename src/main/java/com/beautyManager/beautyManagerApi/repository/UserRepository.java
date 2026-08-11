@@ -1,6 +1,7 @@
 package com.beautyManager.beautyManagerApi.repository;
 
 import com.beautyManager.beautyManagerApi.entity.User;
+import com.beautyManager.beautyManagerApi.enums.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -58,4 +59,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmailAndDeletedAtIsNull(String email);
 
     boolean existsByEmailAndDeletedAtIsNull(String email);
+
+    List<User> findAllByRoleAndDeletedAtIsNull(UserRole role);
 }
