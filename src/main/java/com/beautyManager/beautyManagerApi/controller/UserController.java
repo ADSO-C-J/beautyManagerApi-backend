@@ -3,6 +3,7 @@ package com.beautyManager.beautyManagerApi.controller;
 import com.beautyManager.beautyManagerApi.dto.UserRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.UserResponseDTO;
 import com.beautyManager.beautyManagerApi.service.userService.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Tag(name = "Usuarios", description = "Gestión CRUD de usuarios (protegido con JWT)")
 public class UserController {
 
     private final UserService userService;
