@@ -5,6 +5,7 @@ import com.beautyManager.beautyManagerApi.dto.UserResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.serviceDto.ServiceRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.serviceDto.ServiceResponseDTO;
 import com.beautyManager.beautyManagerApi.service.serviceService.ServiceService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/services")
 @RequiredArgsConstructor
+@Tag(name = "Servicios", description = "Consulta y creación de servicios del salón (protegido con JWT)")
 public class ServiceController {
     private final ServiceService serviceService;
 

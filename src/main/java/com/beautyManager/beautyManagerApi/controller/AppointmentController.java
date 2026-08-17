@@ -3,6 +3,7 @@ package com.beautyManager.beautyManagerApi.controller;
 import com.beautyManager.beautyManagerApi.dto.AppointmentResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.CreateAppointmentRequestDTO;
 import com.beautyManager.beautyManagerApi.service.appointmentService.AppointmentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/appointments")
 @RequiredArgsConstructor
+@Tag(name = "Citas", description = "Consulta por rango de fechas y creación de citas (protegido con JWT)")
 public class AppointmentController {
 
     private final AppointmentService appointmentService;

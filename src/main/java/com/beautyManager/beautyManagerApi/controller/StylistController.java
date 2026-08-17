@@ -2,6 +2,7 @@ package com.beautyManager.beautyManagerApi.controller;
 
 import com.beautyManager.beautyManagerApi.dto.StylistResponseDTO;
 import com.beautyManager.beautyManagerApi.service.stylistService.StylistService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/stylists")
 @RequiredArgsConstructor
+@Tag(name = "Estilistas", description = "Listado de estilistas del salón (protegido con JWT)")
 public class StylistController {
 
     private final StylistService stylistService;

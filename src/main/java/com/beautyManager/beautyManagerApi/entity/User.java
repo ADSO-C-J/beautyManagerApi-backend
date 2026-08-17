@@ -41,6 +41,7 @@ public class User {
     @Column(name = "role", columnDefinition = "user_role")
     private UserRole role;
 
+    @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
 
