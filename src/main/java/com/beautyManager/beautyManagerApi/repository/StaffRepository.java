@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface StaffRepository extends JpaRepository<StaffEntity, UUID> {
     List<StaffEntity> findAllByIsActiveTrue();
     List<StaffEntity> findAllByBusinessIdAndIsActiveTrue(UUID businessId);
+    java.util.Optional<StaffEntity> findByUserId(UUID userId);
 }
