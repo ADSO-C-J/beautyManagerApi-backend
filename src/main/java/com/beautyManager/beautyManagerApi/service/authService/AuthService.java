@@ -7,7 +7,7 @@ import com.beautyManager.beautyManagerApi.dto.auth.RegisterResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.UserSummaryDTO;
 
 public interface AuthService {
-    AuthResponseDTO login(LoginRequestDTO dto);
+    AuthResponseDTO login(LoginRequestDTO dto, String ipAddress, String userAgent);
     RegisterResponseDTO register(RegisterRequestDTO dto);
     UserSummaryDTO getCurrentUser(String email);
 }

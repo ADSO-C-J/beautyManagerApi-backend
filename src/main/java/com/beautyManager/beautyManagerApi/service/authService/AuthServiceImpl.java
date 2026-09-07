@@ -10,6 +10,7 @@ import com.beautyManager.beautyManagerApi.enums.UserRole;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
 import com.beautyManager.beautyManagerApi.security.JwtService;
+import com.beautyManager.beautyManagerApi.service.sessionService.UserSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +27,10 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserSessionService userSessionService;
 
     @Override
-    public AuthResponseDTO login(LoginRequestDTO dto) {
+    public AuthResponseDTO login(LoginRequestDTO dto, String ipAddress, String userAgent) {
         // 1. Buscar al usuario por email (que no esté borrado)
         User user = userRepository.findByEmailAndDeletedAtIsNull(dto.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas"));
@@ -50,10 +53,20 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtService.generateToken(user);
         String roleAuthority = "ROLE_" + user.getRole().name();
 
+        // 6. Registrar la sesión con un refresh token (se guarda solo el hash SHA-256)
+        String refreshToken = UUID.randomUUID() + "." + UUID.randomUUID();
+        long expiresInMillis = jwtService.getExpirationMs();
+        userSessionService.createSession(
+                user.getId(),
+                refreshToken,
+                LocalDateTime.now().plusNanos(expiresInMillis * 1_000_000L),
+                (ipAddress == null || ipAddress.isBlank()) ? null : ipAddress,
+                (userAgent == null || userAgent.isBlank()) ? null : userAgent);
+
         return AuthResponseDTO.builder()
                 .token(token)
-                .refreshToken(null)
-                .expiresIn(jwtService.getExpirationMs())
+                .refreshToken(refreshToken)
+                .expiresIn(expiresInMillis)
                 .tokenType("Bearer")
                 .roles(List.of(roleAuthority))
                 .user(toUserSummary(user))

@@ -24,10 +24,11 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "Iniciar sesión", description = "Autentica con email y contraseña y devuelve un token JWT.")
+    @Operation(summary = "Iniciar sesión", description = "Autentica con email y contraseña y devuelve un token JWT. Registra la sesión (IP, user-agent) y devuelve un refresh token.")
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto) {
-        return ResponseEntity.ok(authService.login(dto));
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto,
+                                                 jakarta.servlet.http.HttpServletRequest request) {
+        return ResponseEntity.ok(authService.login(dto, request.getRemoteAddr(), request.getHeader("User-Agent")));
     }
 
     @Operation(summary = "Registrar usuario", description = "Crea un usuario con rol 'cliente' y devuelve sus datos.")
