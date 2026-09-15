@@ -20,5 +20,8 @@ public class StylistController {
     @GetMapping
     public ResponseEntity<List<StylistResponseDTO>> findAll() {
         return ResponseEntity.ok(stylistService.findAll());
+
+
+
     }
 }

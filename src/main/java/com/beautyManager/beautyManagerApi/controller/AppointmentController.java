@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.beautyManager.beautyManagerApi.dto.UpdateAppointmentRequestDTO;
+import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -28,6 +31,22 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.findAll(dateFrom, dateTo));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<AppointmentResponseDTO> findById(@PathVariable UUID id) {
+        return ResponseEntity.ok(appointmentService.findById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AppointmentResponseDTO> update(
+            @PathVariable UUID id, @RequestBody UpdateAppointmentRequestDTO dto) {
+        return ResponseEntity.ok(appointmentService.update(id,dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id){
+        appointmentService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
     @PostMapping
     public ResponseEntity<AppointmentResponseDTO> create(@RequestBody CreateAppointmentRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.create(dto));

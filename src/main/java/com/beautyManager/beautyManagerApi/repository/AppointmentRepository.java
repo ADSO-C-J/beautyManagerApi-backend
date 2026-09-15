@@ -7,10 +7,11 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
+import java.util.Optional;
 @Repository
 public interface AppointmentRepository extends JpaRepository<AppointmentEntity, UUID> {
     List<AppointmentEntity> findAllByBusinessIdAndDeletedAtIsNull(UUID businessId);
     List<AppointmentEntity> findAllByBusinessIdAndDeletedAtIsNullAndScheduledAtBetween(
             UUID businessId, LocalDateTime start, LocalDateTime end);
+    Optional<AppointmentEntity> findByIdAndDeletedAtIsNull(UUID id);
 }

@@ -86,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(dto.getEmail())
                 .passwordHash(passwordEncoder.encode(dto.getPassword()))
                 .phone(dto.getPhone())
-                .role(UserRole.cliente)
+                .role(UserRole.Client)
                 .isActive(true)
                 .build();
 
