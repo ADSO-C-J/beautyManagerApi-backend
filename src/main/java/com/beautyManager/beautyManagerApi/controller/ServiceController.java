@@ -34,10 +34,21 @@ public class ServiceController {
         return ResponseEntity.ok(serviceService.findById(id));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ServiceResponseDTO> update(@PathVariable UUID id, @Valid @RequestBody ServiceRequestDTO dto) {
+        return ResponseEntity.ok(serviceService.update(id, dto));
+    }
     // POST /api/serivces
     @PostMapping
     public ResponseEntity<ServiceResponseDTO> create(@Valid @RequestBody ServiceRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(serviceService.create(dto));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        serviceService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }
