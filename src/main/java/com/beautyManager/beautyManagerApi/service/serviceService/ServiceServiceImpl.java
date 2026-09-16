@@ -9,6 +9,7 @@ import com.beautyManager.beautyManagerApi.repository.ServiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -65,12 +66,27 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public ServiceResponseDTO update(UUID id, ServiceRequestDTO dto) {
-        return null;
+
+        ServiceEntity service = serviceRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Servicio no encontrado con id:" + id));
+            service.setName(dto.getName());
+            service.setDescription(dto.getDescription());
+            service.setPrice(dto.getPrice());
+            service.setDurationMin(dto.getDuration_min());
+            if(dto.getCategory() != null){
+                service.setCategory(TypeServices.valueOf(dto.getCategory()));
+            }
+            return toDTO(serviceRepository.save(service));
+
     }
 
     @Override
     public void delete(UUID id) {
+        ServiceEntity service = serviceRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Servicio no encontrado con Id: "+ id ));
+        service.setDeletedAt(LocalDateTime.now());
 
+        serviceRepository.save(service);
     }
 
 }
