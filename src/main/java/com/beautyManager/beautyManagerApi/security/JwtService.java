@@ -34,9 +34,9 @@ public class JwtService {
 
     /**
      * Genera un token firmado para el usuario autenticado.
-     * Incluye claims útiles: id, role y name.
+     * Incluye claims útiles: id, role, name y (si existe) businessId.
      */
-    public String generateToken(User user) {
+    public String generateToken(User user, String businessId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
 
@@ -45,6 +45,7 @@ public class JwtService {
                 .claim("id", user.getId().toString())
                 .claim("role", user.getRole().name())
                 .claim("name", user.getName())
+                .claim("businessId", businessId)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(signingKey)
@@ -59,6 +60,11 @@ public class JwtService {
     /** Extrae el email (subject) del token. */
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    /** Extrae el claim businessId del token (puede ser null si el usuario no tiene negocio). */
+    public String extractBusinessId(String token) {
+        return extractClaim(token, claims -> claims.get("businessId", String.class));
     }
 
     /** Valida que el token sea firmado correctamente y corresponda al usuario. */

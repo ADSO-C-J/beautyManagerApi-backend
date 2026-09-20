@@ -5,9 +5,12 @@ import com.beautyManager.beautyManagerApi.dto.auth.LoginRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.RegisterRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.RegisterResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.UserSummaryDTO;
+import com.beautyManager.beautyManagerApi.entity.StaffEntity;
 import com.beautyManager.beautyManagerApi.entity.User;
 import com.beautyManager.beautyManagerApi.enums.UserRole;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
+import com.beautyManager.beautyManagerApi.repository.BusinessRepository;
+import com.beautyManager.beautyManagerApi.repository.StaffRepository;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
 import com.beautyManager.beautyManagerApi.security.JwtService;
 import com.beautyManager.beautyManagerApi.service.sessionService.UserSessionService;
@@ -28,6 +31,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserSessionService userSessionService;
+    private final StaffRepository staffRepository;
+    private final BusinessRepository businessRepository;
 
     @Override
     public AuthResponseDTO login(LoginRequestDTO dto, String ipAddress, String userAgent) {
@@ -49,11 +54,14 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // 5. Generar token y armar la respuesta
-        String token = jwtService.generateToken(user);
+        // 5. Resolver el negocio del usuario (staff -> su negocio; resto -> negocio por defecto)
+        UUID businessId = resolveBusinessId(user);
+
+        // 6. Generar token y armar la respuesta
+        String token = jwtService.generateToken(user, businessId != null ? businessId.toString() : null);
         String roleAuthority = "ROLE_" + user.getRole().name();
 
-        // 6. Registrar la sesión con un refresh token (se guarda solo el hash SHA-256)
+        // 7. Registrar la sesión con un refresh token (se guarda solo el hash SHA-256)
         String refreshToken = UUID.randomUUID() + "." + UUID.randomUUID();
         long expiresInMillis = jwtService.getExpirationMs();
         userSessionService.createSession(
@@ -69,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
                 .expiresIn(expiresInMillis)
                 .tokenType("Bearer")
                 .roles(List.of(roleAuthority))
-                .user(toUserSummary(user))
+                .user(toUserSummary(user, businessId))
                 .build();
     }
 
@@ -104,10 +112,25 @@ public class AuthServiceImpl implements AuthService {
     public UserSummaryDTO getCurrentUser(String email) {
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-        return toUserSummary(user);
+        return toUserSummary(user, resolveBusinessId(user));
     }
 
-    private UserSummaryDTO toUserSummary(User user) {
+    /**
+     * Resuelve el negocio asociado al usuario:
+     *  - Si el usuario pertenece al staff, devuelve el business_id de su registro de staff.
+     *  - En caso contrario (p. ej. administrador sin staff o cliente), devuelve el
+     *    negocio por defecto (el primero creado).
+     */
+    private UUID resolveBusinessId(User user) {
+        return staffRepository.findByUserId(user.getId())
+                .map(StaffEntity::getBusinessId)
+                .orElseGet(() -> businessRepository.findAllOrderedByCreation().stream()
+                        .findFirst()
+                        .map(b -> b.getId())
+                        .orElse(null));
+    }
+
+    private UserSummaryDTO toUserSummary(User user, UUID businessId) {
         return UserSummaryDTO.builder()
                 .id(user.getId())
                 .name(user.getName())
@@ -115,6 +138,7 @@ public class AuthServiceImpl implements AuthService {
                 .phone(user.getPhone())
                 .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole())
+                .businessId(businessId)
                 .build();
     }
 }

@@ -7,10 +7,13 @@ import com.beautyManager.beautyManagerApi.entity.AppointmentEntity;
 import com.beautyManager.beautyManagerApi.exception.InvalidRequestException;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.AppointmentRepository;
+import com.beautyManager.beautyManagerApi.repository.BusinessRepository;
 import com.beautyManager.beautyManagerApi.repository.ClientRepository;
 import com.beautyManager.beautyManagerApi.repository.StaffRepository;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,6 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AppointmentServiceImpl implements AppointmentService {
 
+    // Fallback por si no se puede resolver el negocio del usuario autenticado.
     private static final UUID DEFAULT_BUSINESS_ID =
             UUID.fromString("b0000000-0000-0000-0000-000000000001");
 
@@ -30,12 +34,36 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ClientRepository clientRepository;
     private final StaffRepository staffRepository;
     private final UserRepository userRepository;
+    private final BusinessRepository businessRepository;
+
+    /**
+     * Resuelve el negocio del usuario autenticado:
+     *  - Si el usuario pertenece al staff, devuelve el business_id de su registro.
+     *  - En caso contrario, devuelve el negocio por defecto (el primero creado).
+     *  - Si no hay sesión o no hay negocio configurado, usa el fallback.
+     */
+    private UUID resolveBusinessId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null && !auth.getName().isBlank()) {
+            UUID staffBusinessId = userRepository.findByEmailAndDeletedAtIsNull(auth.getName())
+                    .flatMap(user -> staffRepository.findByUserId(user.getId()))
+                    .map(staff -> staff.getBusinessId())
+                    .orElse(null);
+            if (staffBusinessId != null) {
+                return staffBusinessId;
+            }
+        }
+        return businessRepository.findAllOrderedByCreation().stream()
+                .findFirst()
+                .map(business -> business.getId())
+                .orElse(DEFAULT_BUSINESS_ID);
+    }
 
     @Override
     public List<AppointmentResponseDTO> findAll(LocalDateTime start, LocalDateTime end) {
         return appointmentRepository
                 .findAllByBusinessIdAndDeletedAtIsNullAndScheduledAtBetween(
-                        DEFAULT_BUSINESS_ID, start, end)
+                        resolveBusinessId(), start, end)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -53,7 +81,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         LocalDateTime scheduledAt = parseScheduledAt(dto.getDate(), dto.getTime());
 
         AppointmentEntity entity = AppointmentEntity.builder()
-                .businessId(DEFAULT_BUSINESS_ID)
+                .businessId(resolveBusinessId())
                 .clientId(dto.getClientId())
                 .staffId(dto.getStaffId())
                 .scheduledAt(scheduledAt)

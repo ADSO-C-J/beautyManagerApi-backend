@@ -18,4 +18,5 @@ public class UserSummaryDTO {
     private String phone;
     private String avatarUrl;
     private UserRole role;
+    private UUID businessId;
 }
