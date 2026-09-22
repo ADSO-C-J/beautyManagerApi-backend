@@ -79,6 +79,8 @@ public class PaymentServiceImpl implements PaymentService {
                 .notes(dto.getNotes())
                 .createdBy(createdBy)
                 .paidAt(null)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
         return toDTO(paymentRepository.save(payment));

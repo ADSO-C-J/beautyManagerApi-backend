@@ -4,5 +4,5 @@ public enum UserRole {
     administrador,
     estilista,
     recepcionista,
-    Client
+    cliente
 }
