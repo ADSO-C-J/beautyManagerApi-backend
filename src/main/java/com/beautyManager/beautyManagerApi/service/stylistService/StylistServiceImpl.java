@@ -6,6 +6,7 @@ import com.beautyManager.beautyManagerApi.dto.UpdateStylistRequestDTO;
 import com.beautyManager.beautyManagerApi.entity.User;
 import com.beautyManager.beautyManagerApi.enums.UserRole;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
+import com.beautyManager.beautyManagerApi.repository.StaffRepository;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class StylistServiceImpl implements StylistService {
 
     private final UserRepository userRepository;
+    private final StaffRepository staffRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -90,6 +92,12 @@ public class StylistServiceImpl implements StylistService {
         dto.setId(user.getId());
         dto.setName(user.getName());
         dto.setAvatarUrl(user.getAvatarUrl());
+        // El registro de staff aporta el staffId (usado por /api/staff/{staffId}/...)
+        // y la especialidad, que vive en la tabla staff y no en users.
+        staffRepository.findByUserId(user.getId()).ifPresent(staff -> {
+            dto.setStaffId(staff.getId());
+            dto.setSpecialty(staff.getSpecialty());
+        });
         return dto;
     }
 }
