@@ -1,5 +1,6 @@
 package com.beautyManager.beautyManagerApi.security;
 
+import com.beautyManager.beautyManagerApi.service.tokenService.RevokedTokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final RevokedTokenService revokedTokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -46,6 +48,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String email = jwtService.extractEmail(token);
+            String jti = jwtService.extractJti(token);
+
+            // Un token revocado (logout) no debe autenticar, aunque su firma sea válida
+            if (revokedTokenService.isRevoked(jti)) {
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             // Solo autenticamos si aún no hay una sesión activa en el contexto
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {

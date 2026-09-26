@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -41,6 +42,7 @@ public class JwtService {
         Date expiry = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())   // jti: permite revocar el token (logout)
                 .subject(user.getEmail())
                 .claim("id", user.getId().toString())
                 .claim("role", user.getRole().name())
@@ -65,6 +67,21 @@ public class JwtService {
     /** Extrae el claim businessId del token (puede ser null si el usuario no tiene negocio). */
     public String extractBusinessId(String token) {
         return extractClaim(token, claims -> claims.get("businessId", String.class));
+    }
+
+    /** Extrae el identificador único del token (claim 'jti'). */
+    public String extractJti(String token) {
+        return extractClaim(token, Claims::getId);
+    }
+
+    /** Extrae la fecha de expiración del token. */
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    /** Extrae el id de usuario (claim 'id'). */
+    public String extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("id", String.class));
     }
 
     /** Valida que el token sea firmado correctamente y corresponda al usuario. */

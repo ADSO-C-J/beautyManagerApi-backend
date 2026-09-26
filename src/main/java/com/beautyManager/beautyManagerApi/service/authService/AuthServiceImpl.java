@@ -14,6 +14,7 @@ import com.beautyManager.beautyManagerApi.repository.StaffRepository;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
 import com.beautyManager.beautyManagerApi.security.JwtService;
 import com.beautyManager.beautyManagerApi.service.sessionService.UserSessionService;
+import com.beautyManager.beautyManagerApi.service.tokenService.RevokedTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserSessionService userSessionService;
+    private final RevokedTokenService revokedTokenService;
     private final StaffRepository staffRepository;
     private final BusinessRepository businessRepository;
 
@@ -113,6 +115,40 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         return toUserSummary(user, resolveBusinessId(user));
+    }
+
+    @Override
+    public boolean logout(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return false;
+        }
+        String token = authorizationHeader.substring("Bearer ".length()).trim();
+        try {
+            String jti = jwtService.extractJti(token);
+            if (jti == null) {
+                return false;
+            }
+            long expiresAtMillis = jwtService.extractExpiration(token).getTime();
+            UUID userId = parseUserId(jwtService.extractUserId(token));
+
+            // Guardamos el jti hasta su expiración: el filtro JWT lo rechazará.
+            revokedTokenService.revoke(jti, userId, expiresAtMillis);
+            return true;
+        } catch (Exception ex) {
+            // Token malformado o expirado: no hay nada que revocar.
+            return false;
+        }
+    }
+
+    private UUID parseUserId(String rawUserId) {
+        if (rawUserId == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(rawUserId);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     /**

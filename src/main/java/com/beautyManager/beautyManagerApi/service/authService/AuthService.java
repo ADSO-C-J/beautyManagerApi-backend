@@ -10,4 +10,12 @@ public interface AuthService {
     AuthResponseDTO login(LoginRequestDTO dto, String ipAddress, String userAgent);
     RegisterResponseDTO register(RegisterRequestDTO dto);
     UserSummaryDTO getCurrentUser(String email);
+
+    /**
+     * Cierra la sesión del token indicado, revocándolo para que deje de ser válido.
+     *
+     * @param authorizationHeader header "Authorization: Bearer <token>"
+     * @return true si el token quedó revocado
+     */
+    boolean logout(String authorizationHeader);
 }
