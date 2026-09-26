@@ -1,5 +1,7 @@
 package com.beautyManager.beautyManagerApi.service.auditLogService;
 
+import com.beautyManager.beautyManagerApi.dto.auditLogDto.AuditLogPageDTO;
+import com.beautyManager.beautyManagerApi.dto.auditLogDto.AuditLogResponseDTO;
 import com.beautyManager.beautyManagerApi.entity.AuditLogEntity;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.AuditLogRepository;

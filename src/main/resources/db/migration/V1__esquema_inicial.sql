@@ -2,8 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict 3zkyIwj1wPVgWzBPhmtLJounZqesiYpgCz5KeVNymYm1O13KELeOmpm1IGkV75U
-
 -- Dumped from database version 18.4 (Homebrew)
 -- Dumped by pg_dump version 18.4 (Homebrew)
 
@@ -27,7 +25,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
 
 --
--- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
@@ -41,7 +39,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 
 --
--- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
@@ -448,22 +446,7 @@ ALTER TABLE public.facial_recommendations OWNER TO rome;
 --
 -- Name: flyway_schema_history; Type: TABLE; Schema: public; Owner: rome
 --
-
-CREATE TABLE public.flyway_schema_history (
-    installed_rank integer NOT NULL,
-    version character varying(50),
-    description character varying(200) NOT NULL,
-    type character varying(20) NOT NULL,
-    script character varying(1000) NOT NULL,
-    checksum integer,
-    installed_by character varying(100) NOT NULL,
-    installed_on timestamp without time zone DEFAULT now() NOT NULL,
-    execution_time integer NOT NULL,
-    success boolean NOT NULL
-);
-
-
-ALTER TABLE public.flyway_schema_history OWNER TO rome;
+-- NOTA: se omite la tabla de control de Flyway (no debe formar parte del esquema).
 
 --
 -- Name: notification_preferences; Type: TABLE; Schema: public; Owner: rome
@@ -719,20 +702,28 @@ CREATE VIEW public.v_staff_performance AS
  SELECT s.id AS staff_id,
     u.name AS staff_name,
     s.specialty,
-    count(a.id) FILTER (WHERE (a.status = 'completada'::public.appointment_status)) AS total_appointments,
-    COALESCE(sum(t.total), (0)::numeric) AS total_revenue,
-    round(avg(r.rating), 2) AS avg_rating,
-    count(r.id) AS total_reviews
-   FROM ((((public.staff s
+    COALESCE(ap.total_appointments, (0)::bigint) AS total_appointments,
+    COALESCE(ap.total_revenue, (0)::numeric) AS total_revenue,
+    rv.avg_rating,
+    COALESCE(rv.total_reviews, (0)::bigint) AS total_reviews
+   FROM (((public.staff s
      JOIN public.users u ON ((u.id = s.user_id)))
-     LEFT JOIN public.appointments a ON (((a.staff_id = s.id) AND (a.deleted_at IS NULL))))
-     LEFT JOIN ( SELECT appointment_services.appointment_id,
-            sum(appointment_services.price_at_time) AS total
-           FROM public.appointment_services
-          GROUP BY appointment_services.appointment_id) t ON ((t.appointment_id = a.id)))
-     LEFT JOIN public.reviews r ON ((r.staff_id = s.id)))
-  WHERE (s.is_active = true)
-  GROUP BY s.id, u.name, s.specialty;
+     LEFT JOIN ( SELECT a.staff_id,
+            count(a.id) FILTER (WHERE (a.status = 'completada'::public.appointment_status)) AS total_appointments,
+            COALESCE(sum(t.total), (0)::numeric) AS total_revenue
+           FROM (public.appointments a
+             LEFT JOIN ( SELECT appointment_services.appointment_id,
+                    sum(appointment_services.price_at_time) AS total
+                   FROM public.appointment_services
+                  GROUP BY appointment_services.appointment_id) t ON ((t.appointment_id = a.id)))
+          WHERE (a.deleted_at IS NULL)
+          GROUP BY a.staff_id) ap ON ((ap.staff_id = s.id)))
+     LEFT JOIN ( SELECT reviews.staff_id,
+            round(avg(reviews.rating), 2) AS avg_rating,
+            count(reviews.id) AS total_reviews
+           FROM public.reviews
+          GROUP BY reviews.staff_id) rv ON ((rv.staff_id = s.id)))
+  WHERE (s.is_active = true);
 
 
 ALTER VIEW public.v_staff_performance OWNER TO rome;
@@ -859,9 +850,7 @@ ALTER TABLE ONLY public.facial_recommendations
 --
 -- Name: flyway_schema_history flyway_schema_history_pk; Type: CONSTRAINT; Schema: public; Owner: rome
 --
-
-ALTER TABLE ONLY public.flyway_schema_history
-    ADD CONSTRAINT flyway_schema_history_pk PRIMARY KEY (installed_rank);
+-- NOTA: se omite (tabla de control de Flyway).
 
 
 --
@@ -1003,8 +992,7 @@ ALTER TABLE ONLY public.users
 --
 -- Name: flyway_schema_history_s_idx; Type: INDEX; Schema: public; Owner: rome
 --
-
-CREATE INDEX flyway_schema_history_s_idx ON public.flyway_schema_history USING btree (success);
+-- NOTA: se omite (tabla de control de Flyway).
 
 
 --
@@ -1674,6 +1662,4 @@ ALTER TABLE ONLY public.user_sessions
 --
 -- PostgreSQL database dump complete
 --
-
-\unrestrict 3zkyIwj1wPVgWzBPhmtLJounZqesiYpgCz5KeVNymYm1O13KELeOmpm1IGkV75U
 

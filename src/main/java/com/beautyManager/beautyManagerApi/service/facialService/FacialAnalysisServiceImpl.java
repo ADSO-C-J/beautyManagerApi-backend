@@ -115,10 +115,9 @@ public class FacialAnalysisServiceImpl implements FacialAnalysisService {
      */
     private UUID resolveCurrentStaffId() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .flatMap(user -> staffRepository.findByUserId(user.getId()))
-                .map(Staff::getId) // ajusta al tipo real de tu entidad Staff
-                .map(Staff::getId) // ajusta al tipo real de tu entidad Staff
+                .map(staff -> staff.getId())
                 .orElse(null);
     }
 
@@ -130,12 +129,14 @@ public class FacialAnalysisServiceImpl implements FacialAnalysisService {
                 .collect(Collectors.toList());
 
         String clientName = clientRepository.findById(entity.getClientId())
-                .map(Client::getFullName) // ajusta al método real de Client
+                .map(com.beautyManager.beautyManagerApi.entity.ClientEntity::getName)
                 .orElse(null);
 
         String staffName = entity.getStaffId() == null ? null :
                 staffRepository.findById(entity.getStaffId())
-                        .map(Staff::getFullName) // ajusta al método real de Staff
+                        .map(staff -> userRepository.findById(staff.getUserId())
+                                .map(com.beautyManager.beautyManagerApi.entity.User::getName)
+                                .orElse(null))
                         .orElse(null);
 
         return new FacialAnalysisResponseDTO(

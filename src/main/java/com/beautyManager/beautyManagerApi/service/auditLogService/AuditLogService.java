@@ -1,5 +1,8 @@
 package com.beautyManager.beautyManagerApi.service.auditLogService;
 
+import com.beautyManager.beautyManagerApi.dto.auditLogDto.AuditLogPageDTO;
+import com.beautyManager.beautyManagerApi.dto.auditLogDto.AuditLogResponseDTO;
+
 import java.util.List;
 import java.util.UUID;
 

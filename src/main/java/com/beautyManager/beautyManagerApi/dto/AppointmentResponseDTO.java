@@ -1,6 +1,8 @@
 package com.beautyManager.beautyManagerApi.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.Data;
 
@@ -16,4 +18,7 @@ public class AppointmentResponseDTO {
     private LocalDateTime endsAt;
     private String status;
     private String notes;
+    private List<AppointmentServiceItemDTO> services;
+    private BigDecimal totalPrice;
+    private Integer totalDurationMin;
 }

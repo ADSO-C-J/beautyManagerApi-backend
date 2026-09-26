@@ -1,14 +1,18 @@
 package com.beautyManager.beautyManagerApi.service.appointmentService;
 
 import com.beautyManager.beautyManagerApi.dto.AppointmentResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.AppointmentServiceItemDTO;
 import com.beautyManager.beautyManagerApi.dto.CreateAppointmentRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.UpdateAppointmentRequestDTO;
 import com.beautyManager.beautyManagerApi.entity.AppointmentEntity;
+import com.beautyManager.beautyManagerApi.entity.AppointmentServiceEntity;
 import com.beautyManager.beautyManagerApi.exception.InvalidRequestException;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.AppointmentRepository;
+import com.beautyManager.beautyManagerApi.repository.AppointmentServiceRepository;
 import com.beautyManager.beautyManagerApi.repository.BusinessRepository;
 import com.beautyManager.beautyManagerApi.repository.ClientRepository;
+import com.beautyManager.beautyManagerApi.repository.ServiceRepository;
 import com.beautyManager.beautyManagerApi.repository.StaffRepository;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +20,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,10 +37,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             UUID.fromString("b0000000-0000-0000-0000-000000000001");
 
     private final AppointmentRepository appointmentRepository;
+    private final AppointmentServiceRepository appointmentServiceRepository;
     private final ClientRepository clientRepository;
     private final StaffRepository staffRepository;
     private final UserRepository userRepository;
     private final BusinessRepository businessRepository;
+    private final ServiceRepository serviceRepository;
 
     /**
      * Resuelve el negocio del usuario autenticado:
@@ -136,7 +144,48 @@ public class AppointmentServiceImpl implements AppointmentService {
                     .ifPresent(staff -> userRepository.findById(staff.getUserId())
                             .ifPresent(user -> dto.setStylistName(user.getName())));
         }
+        attachServices(dto, appointment.getId());
         return dto;
+    }
+
+    /**
+     * Completa en el DTO la lista de servicios de la cita (tabla appointment_services)
+     * junto con los totales de precio y duración.
+     */
+    private void attachServices(AppointmentResponseDTO dto, UUID appointmentId) {
+        List<AppointmentServiceEntity> items =
+                appointmentServiceRepository.findAllByAppointmentId(appointmentId);
+        if (items.isEmpty()) {
+            dto.setServices(List.of());
+            dto.setTotalPrice(BigDecimal.ZERO);
+            dto.setTotalDurationMin(0);
+            return;
+        }
+
+        List<AppointmentServiceItemDTO> services = items.stream()
+                .map(item -> {
+                    var svc = serviceRepository.findById(item.getServiceId()).orElse(null);
+                    return AppointmentServiceItemDTO.builder()
+                            .id(item.getId())
+                            .serviceId(item.getServiceId())
+                            .name(svc != null ? svc.getName() : null)
+                            .category(svc != null ? svc.getCategory() : null)
+                            .priceAtTime(item.getPriceAtTime())
+                            .durationAtTime(item.getDurationAtTime())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        dto.setServices(services);
+        dto.setTotalPrice(items.stream()
+                .map(AppointmentServiceEntity::getPriceAtTime)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        dto.setTotalDurationMin(items.stream()
+                .map(AppointmentServiceEntity::getDurationAtTime)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum());
     }
 
     private LocalDateTime parseScheduledAt(String date, String time) {

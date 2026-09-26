@@ -1,5 +1,7 @@
 package com.beautyManager.beautyManagerApi.controller;
 
+import com.beautyManager.beautyManagerApi.dto.auditLogDto.AuditLogPageDTO;
+import com.beautyManager.beautyManagerApi.dto.auditLogDto.AuditLogResponseDTO;
 import com.beautyManager.beautyManagerApi.service.auditLogService.AuditLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

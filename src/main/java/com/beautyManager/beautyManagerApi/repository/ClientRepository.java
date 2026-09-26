@@ -15,4 +15,7 @@ public interface ClientRepository extends JpaRepository<ClientEntity, UUID> {
 
     List<ClientEntity> findAllByBusinessIdAndDeletedAtIsNull(UUID businessId);
     List<ClientEntity> findAllByBusinessIdAndDeletedAtIsNullAndNameContainingIgnoreCase(UUID businessId, String name);
+
+    long countByBusinessIdAndDeletedAtIsNullAndCreatedAtBetween(
+            UUID businessId, java.time.LocalDateTime from, java.time.LocalDateTime to);
 }

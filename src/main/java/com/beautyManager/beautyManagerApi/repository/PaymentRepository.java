@@ -29,4 +29,6 @@ public interface PaymentRepository extends JpaRepository<PaymentEntity, UUID> {
             WHERE p.status = 'pagado' AND p.appointmentId IN :appointmentIds
             """)
     BigDecimal sumPagadoByAppointmentIds(@Param("appointmentIds") List<UUID> appointmentIds);
+
+    List<PaymentEntity> findAllByStatusAndPaidAtIsNotNullOrderByPaidAtAsc(PaymentStatus status);
 }
