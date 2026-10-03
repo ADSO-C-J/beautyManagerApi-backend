@@ -56,12 +56,30 @@ public class ClientServiceImpl implements ClientService {
                 .orElse(DEFAULT_BUSINESS_ID);
     }
 
+    /**
+     * Indica si el usuario autenticado tiene rol administrador.
+     *
+     * El administrador es el unico perfil con vision GLOBAL: puede consultar
+     * clientes de todos los negocios, no solo del suyo. El resto de roles
+     * (estilista, recepcionista, cliente) queda acotado a su business_id.
+     */
+    private boolean isAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_administrador".equals(a.getAuthority()));
+    }
+
     @Override
     public List<ClientResponseDTO> search(String query) {
         // Se lee de la tabla 'clients' para devolver el id que esperan
         // los módulos de citas/reseñas/pagos (clients.id != users.id).
-        List<ClientEntity> clients =
-                clientRepository.findAllByBusinessIdAndDeletedAtIsNull(resolveBusinessId());
+        // El administrador ve TODOS los clientes; el resto, solo los de su negocio.
+        List<ClientEntity> clients = isAdmin()
+                ? clientRepository.findAllByDeletedAtIsNull()
+                : clientRepository.findAllByBusinessIdAndDeletedAtIsNull(resolveBusinessId());
         if (query != null && !query.isBlank()) {
             String q = query.trim().toLowerCase();
             clients = clients.stream()

@@ -37,8 +37,15 @@ build/
 ### VS Code ###
 .vscode/
 
-# ignore local properties
+# --- Credenciales locales (NO versionar) ---
+# application-local.properties: credenciales de desarrollo por perfil.
 src/main/resources/application-local.properties
+# .env: variables de entorno locales cargadas por Spring (ver spring.config.import).
+# NUNCA subirlos: contienen la contraseña real de la base de datos.
+.env
+.env.*
+!.env.example
+
 # Archivos temporales de compilación/ejecución
 backend_run.txt
 compile*.txt

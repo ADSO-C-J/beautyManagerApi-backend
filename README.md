@@ -21,22 +21,131 @@ API RESTful para la gestión de salones de belleza. Sistema de administración d
 
 - **Java 21** o superior
 - **Maven** (o usar el wrapper `./mvnw`)
-- **PostgreSQL** 15+
-- Variables de entorno:
+- **PostgreSQL** 15+ (o una instancia Neon, ver más abajo)
+
+### Elegir base de datos: Neon o PostgreSQL local
+
+El cambio se hace con el **perfil de Spring**, no editando URLs:
+
+| Cómo arrancas | Perfil | Base de datos | Variables |
+|---|---|---|---|
+| `./mvnw spring-boot:run` | (ninguno) | **Neon** | `DB_*` |
+| `./mvnw spring-boot:run -Dspring-boot.run.profiles=local` | `local` | **PostgreSQL local** | `LOCAL_DB_*` |
 
 ```bash
-export DB_URL=jdbc:postgresql://localhost:5432/beautymanager
-export DB_USERNAME=postgres
-export DB_PASSWORD=postgres
-# Obligatoria: secreto para firmar los JWT (HS256, mínimo 32 bytes / 64 hex)
-# Genera uno con: openssl rand -hex 32
-export JWT_SECRET=change-this-with-a-secure-32-byte-secret
-# Opcional (por defecto 24 h = 86400000 ms)
-export JWT_EXPIRATION=86400000
+# -> Neon
+./mvnw spring-boot:run
+
+# -> PostgreSQL local (localhost:5432)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
+En IntelliJ: **Run → Edit Configurations → Active profiles**.
+Escribe `local` para la base local, déjalo vacío para Neon.
+
+> ⚠️ **Las dos bases tienen datos distintos y NO están sincronizadas.**
+> Tu local tiene 6 usuarios, Neon tiene 4. Flyway aplica las migraciones
+> faltantes en la base contra la que arrancas, pero no copia los datos.
+> No assumes que un usuario que existe en una existe en la otra.
+
+### Datos de prueba (seed)
+
+Hay dos seeds en `src/main/resources/db/seed/`:
+
+| Archivo | Tipo | Cuándo usarlo |
+|---|---|---|
+| `datos_prueba.sql` | **Destructivo** (`TRUNCATE ... CASCADE`) | Base local vacía, quieres empezar de cero |
+| `datos_prueba_neon.sql` | **Aditivo** (solo `INSERT`, idempotente) | Ya hay datos que no quieres perder |
+
+`datos_prueba_neon.sql` **no borra nada**: usa UUID fijos y `ON CONFLICT DO NOTHING`,
+así que puedes reejecutarlo las veces que quieras sin duplicar filas.
+
+```bash
+# Neon (aditivo)
+PGPASSWORD=<pass> psql -h <host> -U <user> -d <db> \
+  -f src/main/resources/db/seed/datos_prueba_neon.sql
+
+# Otro negocio (por defecto usa b0000000-...-0001)
+PGPASSWORD=<pass> psql -h <host> -U <user> -d <db> \
+  -v biz_id=<business-uuid> \
+  -f src/main/resources/db/seed/datos_prueba_neon.sql
+```
+
+Qué agrega: 4 usuarios, 2 staff, 8 clientes, 7 días de horario, 7 citas
+(pasadas/futuras/canceladas), pagos, reseñas, análisis faciales, notas y
+preferencias. Las citas usan fechas **relativas a `CURRENT_DATE`**, así que las
+consultas por rango siempre devuelven algo.
+
+Usuarios creados (contraseña `Password123`):
+
+| Email | Rol |
+|---|---|
+| `prueba.estilista@beautymanager.com` | estilista |
+| `prueba.estilista2@beautymanager.com` | estilista |
+| `prueba.recepcion@beautymanager.com` | recepcionista |
+| `prueba.cliente@beautymanager.com` | cliente |
+
+> `/api/appointments` **exige** `dateFrom` y `dateTo`; sin ellos responde 401:
+> ```
+> GET /api/appointments?dateFrom=2020-01-01T00:00:00&dateTo=2030-12-31T23:59:59
+> ```
+
+### Configuración: el archivo `.env`
+
+Las credenciales **no se versionan**. Viven en un archivo `.env` en la raíz del
+proyecto, que ya está en `.gitignore` (junto con `.env.*`, excepto `.env.example`).
+
+```bash
+cp .env.example .env
+```
+
+Edita `.env` con tus valores:
+
+```bash
+# --- NEON (base por defecto) ---
+# Usa el host "-pooler." de Neon, que es el recomendado para aplicaciones.
+# NO añadas `channel_binding`: el driver JDBC de PostgreSQL no lo soporta.
+DB_URL=jdbc:postgresql://ep-xxx-pooler.<region>.aws.neon.tech:5432/<DB>?sslmode=require
+DB_USERNAME=<usuario>
+DB_PASSWORD=<contrasena>
+
+# --- PostgreSQL LOCAL (perfil "local") ---
+LOCAL_DB_URL=jdbc:postgresql://localhost:5432/beautymanager
+LOCAL_DB_USERNAME=<usuario_local>
+LOCAL_DB_PASSWORD=<contrasena_local>
+
+# --- JWT (compartido) ---
+# Obligatoria en produccion: secreto para firmar los JWT (HS256, mínimo 32 bytes / 64 hex)
+# Genera uno con: openssl rand -hex 32
+JWT_SECRET=change-this-with-a-secure-32-byte-secret
+# Opcional (por defecto 24 h = 86400000 ms)
+JWT_EXPIRATION=86400000
+
+# --- Aplicacion ---
+API_URL=http://localhost:5173
+```
+
+Spring carga el `.env` automáticamente gracias a
+`spring.config.import=optional:file:.env[.properties]` en `application.properties`
+(el sufijo `[.properties]` es necesario para que respete los nombres con `_`).
+No hace falta ninguna librería extra.
+
+> El `.env` **solo** se lee cuando la app se ejecuta desde la raíz del proyecto
+> (Spring busca las rutas relativas ahí). Si la arrancas desde otro directorio,
+> exporta las variables o usa `-Dspring.config.additional-location`.
+
+**Precedencia:** variables de entorno del sistema > `.env` > `application*.properties`.
+
+> ⚠️ No pongas `DB_URL` en las *Environment variables* de la run configuration
+> de IntelliJ: tiene prioridad sobre el `.env` y lo anula. Si lo haces,
+> asegúrate de que sea **una sola variable por línea**, porque el diálogo de
+> IntelliJ no separa varios `CAMPO=valor` pegados en un mismo campo.
+
+Para producción, define las variables en el entorno del servidor; el `.env` es
+solo para desarrollo local.
+
 > Si usas el perfil `local` (`application-local.properties`), el secreto JWT ya
-> trae un valor de desarrollo por defecto, así que no necesitas exportar nada.
+> trae un valor de desarrollo por defecto, así que no necesitas configurar nada.
 
 ## Ejecución
 
@@ -48,15 +157,16 @@ cd beautyManagerApi-backend
 # http://localhost:8080
 ```
 
-Con el perfil `local` (usa `application-local.properties` para la BD y el JWT de desarrollo):
+Con el perfil `local` (usa `application-local.properties` para el JWT de desarrollo):
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-> IntelliJ / VS Code **no** exportan variables de entorno por sí solos. Define
-> `JWT_SECRET` en la run configuration (variables de entorno) o activa el perfil
-> `local`, que ya incluye un secreto de desarrollo.
+> IntelliJ / VS Code **no** exportan variables de entorno por sí solos, pero Spring
+> lee el `.env` de la raíz del proyecto automáticamente, así que la BD y el JWT
+> funcionan sin configurar nada. Para el secreto JWT en `local` también hay valor
+> por defecto.
 
 ---
 

@@ -13,6 +13,9 @@ import java.util.Optional;
 public interface ClientRepository extends JpaRepository<ClientEntity, UUID> {
     Optional<ClientEntity> findByIdAndDeletedAtIsNull(UUID id);
 
+    // Vista global: la usa el administrador, que no esta acotado a un business_id.
+    List<ClientEntity> findAllByDeletedAtIsNull();
+
     List<ClientEntity> findAllByBusinessIdAndDeletedAtIsNull(UUID businessId);
     List<ClientEntity> findAllByBusinessIdAndDeletedAtIsNullAndNameContainingIgnoreCase(UUID businessId, String name);
 
