@@ -28,7 +28,15 @@ API RESTful para la gestión de salones de belleza. Sistema de administración d
 export DB_URL=jdbc:postgresql://localhost:5432/beautymanager
 export DB_USERNAME=postgres
 export DB_PASSWORD=postgres
+# Obligatoria: secreto para firmar los JWT (HS256, mínimo 32 bytes / 64 hex)
+# Genera uno con: openssl rand -hex 32
+export JWT_SECRET=change-this-with-a-secure-32-byte-secret
+# Opcional (por defecto 24 h = 86400000 ms)
+export JWT_EXPIRATION=86400000
 ```
+
+> Si usas el perfil `local` (`application-local.properties`), el secreto JWT ya
+> trae un valor de desarrollo por defecto, así que no necesitas exportar nada.
 
 ## Ejecución
 
@@ -39,6 +47,16 @@ cd beautyManagerApi-backend
 ./mvnw spring-boot:run
 # http://localhost:8080
 ```
+
+Con el perfil `local` (usa `application-local.properties` para la BD y el JWT de desarrollo):
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+> IntelliJ / VS Code **no** exportan variables de entorno por sí solos. Define
+> `JWT_SECRET` en la run configuration (variables de entorno) o activa el perfil
+> `local`, que ya incluye un secreto de desarrollo.
 
 ---
 

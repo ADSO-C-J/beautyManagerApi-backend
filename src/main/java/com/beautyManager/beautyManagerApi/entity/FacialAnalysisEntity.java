@@ -39,6 +39,9 @@ public class FacialAnalysisEntity {
     @Column(name = "skin_tone", columnDefinition = "skin_tone")
     private SkinTone skinTone;
 
+    // CHAR(7) en PostgreSQL se reporta como tipo JDBC CHAR (bpchar). Sin @JdbcTypeCode,
+    // Hibernate 7 espera VARCHAR y la validación de esquema (ddl-auto=validate) falla.
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "skin_tone_hex", columnDefinition = "CHAR(7)")
     private String skinToneHex;
 

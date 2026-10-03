@@ -1,3 +1,8 @@
 spring.datasource.url=jdbc:postgresql://localhost:5432/beautymanager
 spring.datasource.username=username
 spring.datasource.password=password
+
+# JWT para desarrollo local (HS256 requiere minimo 32 bytes).
+# Genera uno con: openssl rand -hex 32
+app.jwt.secret=${JWT_SECRET:change-this-with-a-secure-32-byte-secret}
+app.jwt.expiration=${JWT_EXPIRATION:86400000}
