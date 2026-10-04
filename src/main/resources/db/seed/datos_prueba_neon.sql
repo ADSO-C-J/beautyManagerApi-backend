@@ -43,6 +43,18 @@ INSERT INTO public.staff (id, user_id, business_id, specialty, bio, hire_date, c
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
+-- services
+-- -----------------------------------------------------------------------------
+-- El seed crea sus propios servicios con UUIDs propios (prefijo be). Antes
+-- referenciaba servicios que ya existian en Neon, lo que hacia fallar la FK
+-- appointment_services_service_id_fkey en bases nuevas (Docker).
+INSERT INTO public.services (id, business_id, name, description, category, duration_min, price, is_popular, display_order) VALUES
+('be000000-0000-0000-0000-000000000001', :'biz_id', 'Corte de cabello', 'Corte para mujer u hombre',        'cabello',   45,  25.00, TRUE,  1),
+('be000000-0000-0000-0000-000000000002', :'biz_id', 'Tinte completo',    'Coloracion de raiz a puntas',       'cabello',  120,  80.00, TRUE,  2),
+('be000000-0000-0000-0000-000000000003', :'biz_id', 'Manicure',          'Uñas de gel con esmaltado',         'manos',     60,  30.00, FALSE, 3)
+ON CONFLICT (id) DO NOTHING;
+
+-- -----------------------------------------------------------------------------
 -- business_hours  (estaba vacia en Neon)
 -- -----------------------------------------------------------------------------
 INSERT INTO public.business_hours (id, business_id, day, opens_at, closes_at, is_closed) VALUES
@@ -103,9 +115,9 @@ ON CONFLICT (id) DO NOTHING;
 -- notifications
 -- -----------------------------------------------------------------------------
 INSERT INTO public.notifications (id, user_id, type, title, body, is_read, metadata) VALUES
-('b8000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000000', 'appointment', 'Nueva cita agendada',  'Ana Ruiz agendo una cita de corte',       FALSE, '{"clientId":"b5000000-0000-0000-0000-000000000001"}'),
+('b8000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000002', 'appointment', 'Nueva cita agendada',  'Ana Ruiz agendo una cita de corte',       FALSE, '{"clientId":"b5000000-0000-0000-0000-000000000001"}'),
 ('b8000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001', 'reminder',    'Recordatorio de cita', 'Tienes cita con Maria Hernandez manana', FALSE, NULL),
-('b8000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000000', 'system',      'Mantenimiento',        'Se cargo el seed de pruebas',            TRUE,  NULL)
+('b8000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-000000000002', 'system',      'Mantenimiento',        'Se cargo el seed de pruebas',            TRUE,  NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -131,37 +143,37 @@ ON CONFLICT (id) DO NOTHING;
 -- (CHECK cancelled_fields_consistent).
 -- -----------------------------------------------------------------------------
 INSERT INTO public.appointments (id, business_id, client_id, staff_id, scheduled_at, ends_at, status, notes, cancellation_reason, cancelled_by, cancelled_at, created_by) VALUES
-('bb000000-0000-0000-0000-000000000001', :'biz_id', 'b5000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000001', CURRENT_DATE + 1 + TIME '10:00', CURRENT_DATE + 1 + TIME '10:45', 'confirmada', 'Corte de cabello', NULL, NULL, NULL, 'a0000000-0000-0000-0000-000000000000'),
-('bb000000-0000-0000-0000-000000000002', :'biz_id', 'b5000000-0000-0000-0000-000000000003', 'b2000000-0000-0000-0000-000000000001', CURRENT_DATE + 2 + TIME '12:00', CURRENT_DATE + 2 + TIME '14:00', 'confirmada', 'Tinte completo',   NULL, NULL, NULL, 'a0000000-0000-0000-0000-000000000000'),
+('bb000000-0000-0000-0000-000000000001', :'biz_id', 'b5000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000001', CURRENT_DATE + 1 + TIME '10:00', CURRENT_DATE + 1 + TIME '10:45', 'confirmada', 'Corte de cabello', NULL, NULL, NULL, 'b1000000-0000-0000-0000-000000000002'),
+('bb000000-0000-0000-0000-000000000002', :'biz_id', 'b5000000-0000-0000-0000-000000000003', 'b2000000-0000-0000-0000-000000000001', CURRENT_DATE + 2 + TIME '12:00', CURRENT_DATE + 2 + TIME '14:00', 'confirmada', 'Tinte completo',   NULL, NULL, NULL, 'b1000000-0000-0000-0000-000000000002'),
 ('bb000000-0000-0000-0000-000000000003', :'biz_id', 'b5000000-0000-0000-0000-000000000004', 'b2000000-0000-0000-0000-000000000002', CURRENT_DATE + 3 + TIME '16:00', CURRENT_DATE + 3 + TIME '16:45', 'pendiente',  'Corte + barba',    NULL, NULL, NULL, 'b1000000-0000-0000-0000-000000000002'),
-('bb000000-0000-0000-0000-000000000004', :'biz_id', 'b5000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000001', CURRENT_DATE - 5 + TIME '11:00', CURRENT_DATE - 5 + TIME '11:45', 'completada', 'Corte de cabello', NULL, NULL, NULL, 'a0000000-0000-0000-0000-000000000000'),
-('bb000000-0000-0000-0000-000000000005', :'biz_id', 'b5000000-0000-0000-0000-000000000006', 'b2000000-0000-0000-0000-000000000002', CURRENT_DATE - 9 + TIME '15:00', CURRENT_DATE - 9 + TIME '15:30', 'completada', 'Manicure',         NULL, NULL, NULL, 'a0000000-0000-0000-0000-000000000000'),
+('bb000000-0000-0000-0000-000000000004', :'biz_id', 'b5000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000001', CURRENT_DATE - 5 + TIME '11:00', CURRENT_DATE - 5 + TIME '11:45', 'completada', 'Corte de cabello', NULL, NULL, NULL, 'b1000000-0000-0000-0000-000000000002'),
+('bb000000-0000-0000-0000-000000000005', :'biz_id', 'b5000000-0000-0000-0000-000000000006', 'b2000000-0000-0000-0000-000000000002', CURRENT_DATE - 9 + TIME '15:00', CURRENT_DATE - 9 + TIME '15:30', 'completada', 'Manicure',         NULL, NULL, NULL, 'b1000000-0000-0000-0000-000000000002'),
 ('bb000000-0000-0000-0000-000000000006', :'biz_id', 'b5000000-0000-0000-0000-000000000005', NULL,                                 CURRENT_DATE + 5 + TIME '09:00', CURRENT_DATE + 5 + TIME '10:00', 'pendiente',  'Primera visita',    NULL, NULL, NULL, 'b1000000-0000-0000-0000-000000000002'),
-('bb000000-0000-0000-0000-000000000007', :'biz_id', 'b5000000-0000-0000-0000-000000000007', 'b2000000-0000-0000-0000-000000000001', CURRENT_DATE - 2 + TIME '13:00', CURRENT_DATE - 2 + TIME '14:00', 'cancelada',  'Cliente cancelo',   'El cliente no puede asistir', 'a0000000-0000-0000-0000-000000000000', NOW() - INTERVAL '2 days', NULL)
+('bb000000-0000-0000-0000-000000000007', :'biz_id', 'b5000000-0000-0000-0000-000000000007', 'b2000000-0000-0000-0000-000000000001', CURRENT_DATE - 2 + TIME '13:00', CURRENT_DATE - 2 + TIME '14:00', 'cancelada',  'Cliente cancelo',   'El cliente no puede asistir', 'b1000000-0000-0000-0000-000000000002', NOW() - INTERVAL '2 days', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
 -- appointment_services / staff_services
 -- -----------------------------------------------------------------------------
 INSERT INTO public.appointment_services (id, appointment_id, service_id, price_at_time, duration_at_time) VALUES
-('bc000000-0000-0000-0000-000000000001', 'bb000000-0000-0000-0000-000000000001', '5cb99909-7a25-4be8-8723-003f9cab78c7', 25.00,  45),
-('bc000000-0000-0000-0000-000000000002', 'bb000000-0000-0000-0000-000000000002', 'd3bdaa84-8b38-497a-9ef4-21e75774dd60', 80.00, 120),
-('bc000000-0000-0000-0000-000000000003', 'bb000000-0000-0000-0000-000000000005', '321bccd9-f646-4316-8c85-f739efcc23f5', 30.00,  60)
+('bc000000-0000-0000-0000-000000000001', 'bb000000-0000-0000-0000-000000000001', 'be000000-0000-0000-0000-000000000001', 25.00,  45),
+('bc000000-0000-0000-0000-000000000002', 'bb000000-0000-0000-0000-000000000002', 'be000000-0000-0000-0000-000000000002', 80.00, 120),
+('bc000000-0000-0000-0000-000000000003', 'bb000000-0000-0000-0000-000000000005', 'be000000-0000-0000-0000-000000000003', 30.00,  60)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.staff_services (staff_id, service_id) VALUES
-('b2000000-0000-0000-0000-000000000001', '5cb99909-7a25-4be8-8723-003f9cab78c7'),
-('b2000000-0000-0000-0000-000000000001', 'd3bdaa84-8b38-497a-9ef4-21e75774dd60'),
-('b2000000-0000-0000-0000-000000000002', '321bccd9-f646-4316-8c85-f739efcc23f5')
+('b2000000-0000-0000-0000-000000000001', 'be000000-0000-0000-0000-000000000001'),
+('b2000000-0000-0000-0000-000000000001', 'be000000-0000-0000-0000-000000000002'),
+('b2000000-0000-0000-0000-000000000002', 'be000000-0000-0000-0000-000000000003')
 ON CONFLICT DO NOTHING;
 
 -- -----------------------------------------------------------------------------
 -- payments + reviews  (solo sobre citas completadas / coherentes)
 -- -----------------------------------------------------------------------------
 INSERT INTO public.payments (id, appointment_id, amount, method, status, reference, paid_at, notes, created_by) VALUES
-('bd000000-0000-0000-0000-000000000001', 'bb000000-0000-0000-0000-000000000004', 25.00, 'tarjeta_credito', 'pagado',    'PAG-SEED-0001', NOW() - INTERVAL '5 days', 'Pago con tarjeta',        'a0000000-0000-0000-0000-000000000000'),
-('bd000000-0000-0000-0000-000000000002', 'bb000000-0000-0000-0000-000000000005', 30.00, 'efectivo',        'pagado',    'PAG-SEED-0002', NOW() - INTERVAL '9 days', 'Pago en efectivo',       'a0000000-0000-0000-0000-000000000000'),
-('bd000000-0000-0000-0000-000000000003', 'bb000000-0000-0000-0000-000000000001', 25.00, 'transferencia',   'pendiente', NULL,            NULL,                    'Cita futura, sin cobrar', 'a0000000-0000-0000-0000-000000000000')
+('bd000000-0000-0000-0000-000000000001', 'bb000000-0000-0000-0000-000000000004', 25.00, 'tarjeta_credito', 'pagado',    'PAG-SEED-0001', NOW() - INTERVAL '5 days', 'Pago con tarjeta',        'b1000000-0000-0000-0000-000000000002'),
+('bd000000-0000-0000-0000-000000000002', 'bb000000-0000-0000-0000-000000000005', 30.00, 'efectivo',        'pagado',    'PAG-SEED-0002', NOW() - INTERVAL '9 days', 'Pago en efectivo',       'b1000000-0000-0000-0000-000000000002'),
+('bd000000-0000-0000-0000-000000000003', 'bb000000-0000-0000-0000-000000000001', 25.00, 'transferencia',   'pendiente', NULL,            NULL,                    'Cita futura, sin cobrar', 'b1000000-0000-0000-0000-000000000002')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.reviews (id, appointment_id, client_id, staff_id, rating, comment, is_public) VALUES

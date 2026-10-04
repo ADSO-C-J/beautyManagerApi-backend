@@ -17,7 +17,7 @@ import java.util.function.Function;
 
 /**
  * Servicio encargado de crear y validar los tokens JWT.
- * Firmado con HS256 usando un secreto configurado en application.properties.
+ * Firmado con HMAC usando un secreto configurado en application.properties.
  */
 @Service
 public class JwtService {
@@ -28,7 +28,8 @@ public class JwtService {
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.expiration}") long expirationMs) {
-        // HS256 requiere una clave de al menos 256 bits (32 bytes)
+        // Clave HMAC: debe tener al menos 256 bits (32 bytes) para el algoritmo
+        // que JJWT elija segun el tamano (HS512 con una clave de 64 hex).
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }

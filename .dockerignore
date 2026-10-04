@@ -1,0 +1,36 @@
+# Contexto de build: todo lo que la imagen NO necesita.
+# Cuanto mas pequeño el contexto, mas rapido el build (y menos riesgo de
+# filtrar secretos).
+
+# --- Secretos: NUNCA deben entrar en la imagen ---
+.env
+.env.*
+!.env.example
+
+# --- Git / IDE ---
+.git
+.gitignore
+.gitattributes
+.idea
+.vscode
+*.iml
+*.iws
+
+# --- Build / Maven ---
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.jar
+
+# --- Docker ---
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# --- Artefactos temporales del proyecto ---
+*.log
+backend_run.txt
+compile*.txt
+HELP.md
+
+# --- Docs (no hacen falta en runtime) ---
+README.md

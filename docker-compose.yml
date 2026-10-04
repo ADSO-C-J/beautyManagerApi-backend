@@ -1,0 +1,74 @@
+# =============================================================================
+# BeautyManager API - entorno local con Docker
+# =============================================================================
+#   docker compose up -d --build       # levanta postgres + api
+#   docker compose logs -f api         # sigue los logs
+#   docker compose down                # para (conserva el volumen)
+#   docker compose down -v             # para y BORRA la base de datos
+#
+# IMPORTANTE: este compose usa PostgreSQL LOCAL en Docker, NO Neon.
+# Para apuntar a Neon, quita/comenta el servicio 'db' y defines DB_URL,
+# DB_USERNAME y DB_PASSWORD en un archivo .env (ver .env.example).
+# =============================================================================
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: bm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: beautymanager
+      POSTGRES_USER: bmanager
+      POSTGRES_PASSWORD: bmanager
+    ports:
+      # Puerto en tu Mac. Por defecto 5434 porque tienes PostgreSQL locales
+      # ocupando 5432 y 5433. Dentro de la red de Docker la app usa 'db:5432'.
+      # Override:  POSTGRES_HOST_PORT=5555 docker compose up -d
+      # Solo expuesto en localhost: no lo abras a la red.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5434}:5432"
+    volumes:
+      # PostgreSQL 18+ exige montar en /var/lib/postgresql (no en .../data).
+      # Montar en la ruta antigua deja la imagen en 'unhealthy'.
+      - pgdata:/var/lib/postgresql
+      # Scripts de init: solo se ejecutan con el volumen vacio.
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Compose espera a esto antes de arrancar la API (depends_on).
+      test: ["CMD-SHELL", "pg_isready -U bmanager -d beautymanager"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bm-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Host 'db' es el nombre del servicio dentro de la red de Compose.
+      DB_URL: jdbc:postgresql://db:5432/beautymanager
+      DB_USERNAME: bmanager
+      DB_PASSWORD: bmanager
+      # Perfil 'local' = PostgreSQL local (variables LOCAL_DB_*).
+      SPRING_PROFILES_ACTIVE: local
+      LOCAL_DB_URL: jdbc:postgresql://db:5432/beautymanager
+      LOCAL_DB_USERNAME: bmanager
+      LOCAL_DB_PASSWORD: bmanager
+      # Secreto JWT. Se lee del archivo .env de la raiz del proyecto.
+      # El ':?' hace que Compose ABORTE con un error claro si no esta definido,
+      # en vez de arrancar con un secreto por defecto conocido (inseguro).
+      # Genera uno con:  openssl rand -hex 32
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET en el archivo .env - generalo con openssl rand -hex 32}
+      JWT_EXPIRATION: 86400000
+      API_URL: http://localhost:5173
+      TZ: America/Mexico_City
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

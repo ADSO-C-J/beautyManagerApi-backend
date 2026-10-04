@@ -55,6 +55,10 @@ public class SecurityConfig {
                     .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                     // Documentación OpenAPI / Swagger UI (pública)
                     .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-ui.html/**").permitAll()
+                    // Solo 'health' es publico: lo usa el HEALTHCHECK del contenedor
+                    // (docker) y los orquestadores. El resto de Actuator
+                    // (/actuator/env, /metrics, ...) sigue requiriendo token.
+                    .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                     // El resto de la API requiere autenticación
                     .anyRequest().authenticated()
             )

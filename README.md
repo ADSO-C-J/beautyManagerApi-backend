@@ -115,9 +115,11 @@ LOCAL_DB_USERNAME=<usuario_local>
 LOCAL_DB_PASSWORD=<contrasena_local>
 
 # --- JWT (compartido) ---
-# Obligatoria en produccion: secreto para firmar los JWT (HS256, mínimo 32 bytes / 64 hex)
-# Genera uno con: openssl rand -hex 32
-JWT_SECRET=change-this-with-a-secure-32-byte-secret
+# Secreto de firma (HMAC). Minimo 32 bytes; `openssl rand -hex 32` da 64 hex.
+# Obligatorio en produccion. Genera uno con: openssl rand -hex 32
+# El compose ABORTA si falta: no hay valor por defecto, porque firmar con una
+# clave conocida permitiria a cualquiera falsificar tokens.
+JWT_SECRET=<genera-uno-con-openssl-rand-hex-32>
 # Opcional (por defecto 24 h = 86400000 ms)
 JWT_EXPIRATION=86400000
 
@@ -148,6 +150,86 @@ solo para desarrollo local.
 > trae un valor de desarrollo por defecto, así que no necesitas configurar nada.
 
 ## Ejecución
+
+### Opción 1: Docker (recomendado)
+
+Levanta la API **y** PostgreSQL 18 en un solo comando:
+
+```bash
+docker compose up -d --build
+docker compose logs -f api        # sigue el arranque
+curl http://localhost:8080/actuator/health
+```
+
+| Servicio | URL | Notas |
+|---|---|---|
+| API | http://localhost:8080 | Swagger en `/swagger-ui.html` |
+| Health | http://localhost:8080/actuator/health | público, lo usa el HEALTHCHECK |
+| PostgreSQL | `127.0.0.1:5434` | user/db/pass: `bmanager` |
+
+> El puerto **5434** es porque ya tienes PostgreSQL locales ocupando 5432 y 5433.
+> Para usar otro: `POSTGRES_HOST_PORT=5555 docker compose up -d`. Dentro de la red
+> de Docker la app siempre conecta a `db:5432`, así que el puerto del host no le
+> afecta.
+
+Comandos habituales:
+
+```bash
+docker compose ps                 # estado
+docker compose restart api        # reiniciar solo la API
+docker compose down               # parar (CONSERVA los datos)
+docker compose down -v            # parar y BORRAR la base de datos
+docker compose exec db psql -U bmanager -d beautymanager   # consola SQL
+```
+
+> Tras cambiar código Java, `docker compose restart api` **no** basta: la imagen
+> contiene el jar compilado. Usa `docker compose up -d --build api`.
+
+Detalles de la configuración:
+
+- El `Dockerfile` es **multi-stage**: compila con Maven 3.9 + JDK 21 y la imagen
+  final solo lleva el JRE y el jar (sin toolchain de build).
+- La app corre como **usuario no-root** (`appuser`), no como root.
+- `depends_on: condition: service_healthy` + `pg_isready` garantizan que Flyway
+  no intente migrar antes de que PostgreSQL acepte conexiones.
+- El volumen se monta en `/var/lib/postgresql` (no en `.../data`): **PostgreSQL 18+
+  cambió esa ruta** y con la antigua el contenedor queda `unhealthy`.
+- `docker/initdb/01-crear-rol-rome.sql` crea el rol `rome`, al que apuntan las 35
+  sentencias `OWNER TO rome` de `V1__esquema_inicial.sql` (generada con `pg_dump` en
+  local). No se modifica esa migración porque ya está aplicada en Neon y en tu base
+  local: editarla cambiaría su checksum y Flyway la rechazaría.
+- El puerto de PostgreSQL está ligado a `127.0.0.1` (no a `0.0.0.0`), para no
+  exponer la base a la red local.
+- `.dockerignore` excluye `.env`, `.git`, `.idea` y `target/` del contexto de
+  build: tus credenciales nunca entran en la imagen.
+- Las migraciones de Flyway se ejecutan solas al arrancar (V1-V4).
+
+### Datos de prueba en Docker
+
+La base del contenedor arranca vacía (solo el esquema). Para poblarla necesitas
+primero un negocio, porque casi todas las tablas cuelgan de `business_id`:
+
+```bash
+docker compose exec -T db psql -U bmanager -d beautymanager -c \
+  "INSERT INTO public.businesses (id, name, city, currency)
+   VALUES ('d0000000-0000-0000-0000-000000000001','BeautyManager Docker','CDMX','MXN')
+   ON CONFLICT (id) DO NOTHING;"
+
+docker compose exec -T db psql -U bmanager -d beautymanager \
+  -v biz_id=d0000000-0000-0000-0000-000000000001 \
+  < src/main/resources/db/seed/datos_prueba_neon.sql
+```
+
+Resultado: 4 users, 8 clients, 7 appointments, 3 services, 2 staff.
+Usuarios de prueba (password `Password123`): `prueba.estilista@beautymanager.com`,
+`prueba.recepcion@beautymanager.com`, `prueba.cliente@beautymanager.com`,
+`prueba.estilista2@beautymanager.com`.
+
+> Este compose usa **PostgreSQL local**, no Neon. Para apuntar a Neon dentro de
+> Docker, quita el servicio `db` y pasa `DB_URL`, `DB_USERNAME` y `DB_PASSWORD`
+> como variables de entorno al contenedor.
+
+### Opción 2: Maven directo (sin Docker)
 
 ```bash
 git clone git@github.com:ADSO-C-J/beautyManagerApi-backend.git
@@ -366,6 +448,63 @@ PostgreSQL con enums nativos y soft delete.
 - Preparado para JWT / sesión
 
 ---
+
+## Despliegue en Render
+
+Render construye la imagen desde el `Dockerfile` de la raíz (**ignora
+`docker-compose.yml`**) y despliega contra **Neon**, no contra el Postgres del
+contenedor.
+
+**1. Sube los archivos de Docker al repositorio.** Render construye desde GitHub,
+así que el `Dockerfile` debe estar commiteado; si no, falla con
+`Dockerfile not found`.
+
+**2. Crea el Web Service** en [dashboard.render.com](https://dashboard.render.com):
+
+| Campo | Valor |
+|---|---|
+| Runtime | **Docker** (se detecta solo) |
+| Branch | `main` |
+| Health Check Path | `/actuator/health` |
+
+**3. Define las variables de entorno** en el panel (Environment):
+
+```
+DB_URL       = jdbc:postgresql://ep-...-pooler.<region>.aws.neon.tech/BEAUTYMANAGER?sslmode=require
+DB_USERNAME  = neondb_owner
+DB_PASSWORD  = <contraseña de Neon>
+JWT_SECRET   = <openssl rand -hex 32>
+```
+
+> **No definas `SPRING_PROFILES_ACTIVE=local`.** Ese perfil apunta al Postgres
+> local del contenedor y la conexión a Neon fallaría. Sin perfil, la app usa
+> `application.properties`, que es el que lee las `DB_*`.
+
+Detalles importantes:
+
+- El puerto lo define `server.port=${PORT:8080}`. Render inyecta un `PORT`
+  aleatorio; sin esa línea la app escucharía en 8080 y Render no la encontraría.
+- El health check usa `/actuator/health`, que es el único endpoint de Actuator
+  público; `/actuator/env` y `/actuator/metrics` siguen requiriendo token.
+- El plan **Free se duerme** tras 15 min de inactividad y el primer request
+  tarda ~1 minuto. Para producción usa el plan Starter.
+- Neon se conecta bien porque el host `pooler` acepta cualquier IP (no aplica la
+  whitelist de IPs, que sí limitaría un host directo).
+- Render gestiona el TLS y reenvía HTTP al contenedor: no hace falta nada extra.
+- El `Dockerfile` corre como usuario no-root y expone `JAVA_OPTS` para que
+  Render pueda ajustar la memoria.
+
+**Verificar:**
+
+```bash
+curl https://<tu-servicio>.onrender.com/actuator/health
+# {"groups":["liveness","readiness"],"status":"UP"}
+```
+
+En los logs de Render debes ver `Database JDBC URL [...neon.tech...]`.
+
+> Las migraciones de Flyway se ejecutan solas al arrancar. Si más de una
+> instancia levanta a la vez, Render lo serializa por defecto en el despliegue.
 
 ## Pruebas
 
