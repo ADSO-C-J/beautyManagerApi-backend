@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.dto;
+package com.beautyManager.beautyManagerApi.dto.appointmentDto;
 
 import com.beautyManager.beautyManagerApi.enums.TypeServices;
 import lombok.Builder;

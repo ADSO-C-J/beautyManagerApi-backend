@@ -1,7 +1,7 @@
 package com.beautyManager.beautyManagerApi.controller;
 
-import com.beautyManager.beautyManagerApi.dto.config.BusinessRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.config.BusinessResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessResponseDTO;
 import com.beautyManager.beautyManagerApi.service.businessService.BusinessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

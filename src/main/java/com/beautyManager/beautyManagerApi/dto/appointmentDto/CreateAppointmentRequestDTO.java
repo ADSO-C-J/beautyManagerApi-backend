@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.dto;
+package com.beautyManager.beautyManagerApi.dto.appointmentDto;
 
 import java.util.UUID;
 import lombok.Data;

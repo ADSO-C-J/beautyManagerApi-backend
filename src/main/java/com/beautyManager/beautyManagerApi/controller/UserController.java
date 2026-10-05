@@ -1,7 +1,7 @@
 package com.beautyManager.beautyManagerApi.controller;
 
-import com.beautyManager.beautyManagerApi.dto.UserRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.UserResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.userDto.UserRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.userDto.UserResponseDTO;
 import com.beautyManager.beautyManagerApi.service.userService.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

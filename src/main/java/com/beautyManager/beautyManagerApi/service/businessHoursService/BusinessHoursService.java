@@ -1,7 +1,7 @@
 package com.beautyManager.beautyManagerApi.service.businessHoursService;
 
-import com.beautyManager.beautyManagerApi.dto.config.BusinessHoursRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.config.BusinessHoursResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessHoursRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessHoursResponseDTO;
 
 import java.util.List;
 import java.util.UUID;

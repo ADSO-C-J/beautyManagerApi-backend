@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.dto;
+package com.beautyManager.beautyManagerApi.dto.clientDto;
 import lombok.Data;
 
 @Data

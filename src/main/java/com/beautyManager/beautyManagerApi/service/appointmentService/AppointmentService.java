@@ -1,8 +1,8 @@
 package com.beautyManager.beautyManagerApi.service.appointmentService;
 
-import com.beautyManager.beautyManagerApi.dto.AppointmentResponseDTO;
-import com.beautyManager.beautyManagerApi.dto.CreateAppointmentRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.UpdateAppointmentRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.AppointmentResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.CreateAppointmentRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.UpdateAppointmentRequestDTO;
 
 
 import java.time.LocalDateTime;

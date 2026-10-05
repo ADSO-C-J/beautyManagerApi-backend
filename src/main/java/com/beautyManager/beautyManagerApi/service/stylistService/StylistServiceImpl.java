@@ -1,8 +1,8 @@
 package com.beautyManager.beautyManagerApi.service.stylistService;
 
-import com.beautyManager.beautyManagerApi.dto.CreateStylistRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.StylistResponseDTO;
-import com.beautyManager.beautyManagerApi.dto.UpdateStylistRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.stylistDto.CreateStylistRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.stylistDto.StylistResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.stylistDto.UpdateStylistRequestDTO;
 import com.beautyManager.beautyManagerApi.entity.User;
 import com.beautyManager.beautyManagerApi.enums.UserRole;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;

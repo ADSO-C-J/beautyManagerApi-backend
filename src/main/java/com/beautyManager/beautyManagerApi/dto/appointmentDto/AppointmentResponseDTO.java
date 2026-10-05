@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.dto;
+package com.beautyManager.beautyManagerApi.dto.appointmentDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

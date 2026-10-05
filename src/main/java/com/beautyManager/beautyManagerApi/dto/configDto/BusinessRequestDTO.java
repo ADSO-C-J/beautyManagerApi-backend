@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.dto.config;
+package com.beautyManager.beautyManagerApi.dto.configDto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

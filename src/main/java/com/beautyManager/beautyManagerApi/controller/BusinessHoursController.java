@@ -1,7 +1,7 @@
 package com.beautyManager.beautyManagerApi.controller;
 
-import com.beautyManager.beautyManagerApi.dto.config.BusinessHoursRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.config.BusinessHoursResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessHoursRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessHoursResponseDTO;
 import com.beautyManager.beautyManagerApi.service.businessHoursService.BusinessHoursService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

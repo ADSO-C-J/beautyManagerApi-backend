@@ -1,7 +1,7 @@
 package com.beautyManager.beautyManagerApi.service.businessService;
 
-import com.beautyManager.beautyManagerApi.dto.config.BusinessRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.config.BusinessResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessResponseDTO;
 import com.beautyManager.beautyManagerApi.entity.BusinessesEntity;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.BusinessRepository;

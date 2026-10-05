@@ -1,8 +1,8 @@
 package com.beautyManager.beautyManagerApi.controller;
 
-import com.beautyManager.beautyManagerApi.dto.ClientResponseDTO;
-import com.beautyManager.beautyManagerApi.dto.CreateClientRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.UpdateClientRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.clientDto.ClientResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.clientDto.CreateClientRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.clientDto.UpdateClientRequestDTO;
 import com.beautyManager.beautyManagerApi.service.clientService.ClientService;
 
 

@@ -1,7 +1,7 @@
 package com.beautyManager.beautyManagerApi.service.businessHoursService;
 
-import com.beautyManager.beautyManagerApi.dto.config.BusinessHoursRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.config.BusinessHoursResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessHoursRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.BusinessHoursResponseDTO;
 import com.beautyManager.beautyManagerApi.entity.BusinessHoursEntity;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.BusinessHoursRepository;

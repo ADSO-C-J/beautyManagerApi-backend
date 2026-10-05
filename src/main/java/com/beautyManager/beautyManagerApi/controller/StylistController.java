@@ -1,6 +1,8 @@
 package com.beautyManager.beautyManagerApi.controller;
 
-import com.beautyManager.beautyManagerApi.dto.*;
+import com.beautyManager.beautyManagerApi.dto.stylistDto.CreateStylistRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.stylistDto.StylistResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.stylistDto.UpdateStylistRequestDTO;
 import com.beautyManager.beautyManagerApi.service.stylistService.StylistService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

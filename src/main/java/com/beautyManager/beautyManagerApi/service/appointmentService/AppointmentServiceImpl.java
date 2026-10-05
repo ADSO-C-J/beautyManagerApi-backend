@@ -1,9 +1,9 @@
 package com.beautyManager.beautyManagerApi.service.appointmentService;
 
-import com.beautyManager.beautyManagerApi.dto.AppointmentResponseDTO;
-import com.beautyManager.beautyManagerApi.dto.AppointmentServiceItemDTO;
-import com.beautyManager.beautyManagerApi.dto.CreateAppointmentRequestDTO;
-import com.beautyManager.beautyManagerApi.dto.UpdateAppointmentRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.AppointmentResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.AppointmentServiceItemDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.CreateAppointmentRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.UpdateAppointmentRequestDTO;
 import com.beautyManager.beautyManagerApi.entity.AppointmentEntity;
 import com.beautyManager.beautyManagerApi.entity.AppointmentServiceEntity;
 import com.beautyManager.beautyManagerApi.exception.InvalidRequestException;

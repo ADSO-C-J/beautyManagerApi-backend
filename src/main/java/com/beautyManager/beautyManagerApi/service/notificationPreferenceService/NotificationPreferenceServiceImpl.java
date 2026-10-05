@@ -1,6 +1,6 @@
 package com.beautyManager.beautyManagerApi.service.notificationPreferenceService;
 
-import com.beautyManager.beautyManagerApi.dto.config.NotificationPreferenceDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.NotificationPreferenceDTO;
 import com.beautyManager.beautyManagerApi.entity.NotificationPreferenceEntity;
 import com.beautyManager.beautyManagerApi.repository.NotificationPreferenceRepository;
 import lombok.RequiredArgsConstructor;

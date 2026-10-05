@@ -1,6 +1,6 @@
 package com.beautyManager.beautyManagerApi.controller;
 
-import com.beautyManager.beautyManagerApi.dto.config.NotificationPreferenceDTO;
+import com.beautyManager.beautyManagerApi.dto.configDto.NotificationPreferenceDTO;
 import com.beautyManager.beautyManagerApi.service.notificationPreferenceService.NotificationPreferenceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

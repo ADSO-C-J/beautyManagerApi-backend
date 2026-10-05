@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.dto.config;
+package com.beautyManager.beautyManagerApi.dto.configDto;
 
 import com.beautyManager.beautyManagerApi.enums.DayOfWeek;
 import jakarta.validation.constraints.NotNull;

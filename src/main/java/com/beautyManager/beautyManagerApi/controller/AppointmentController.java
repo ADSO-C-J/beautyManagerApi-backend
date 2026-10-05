@@ -1,7 +1,7 @@
 package com.beautyManager.beautyManagerApi.controller;
 
-import com.beautyManager.beautyManagerApi.dto.AppointmentResponseDTO;
-import com.beautyManager.beautyManagerApi.dto.CreateAppointmentRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.AppointmentResponseDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.CreateAppointmentRequestDTO;
 import com.beautyManager.beautyManagerApi.service.appointmentService.AppointmentService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import com.beautyManager.beautyManagerApi.dto.UpdateAppointmentRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.appointmentDto.UpdateAppointmentRequestDTO;
 import java.util.UUID;
 
 
