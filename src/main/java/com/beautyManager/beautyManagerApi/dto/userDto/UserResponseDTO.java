@@ -1,4 +1,4 @@
-package com.beautyManager.beautyManagerApi.dto.userDto;
+package com.beautyManager.beautyManagerApi.dto;
 
 import com.beautyManager.beautyManagerApi.enums.UserRole;
 import lombok.Data;
