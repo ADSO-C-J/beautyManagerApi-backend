@@ -9,6 +9,7 @@ import com.beautyManager.beautyManagerApi.entity.ClientEntity;
 import com.beautyManager.beautyManagerApi.entity.ReviewEntity;
 import com.beautyManager.beautyManagerApi.entity.StaffEntity;
 import com.beautyManager.beautyManagerApi.entity.User;
+import com.beautyManager.beautyManagerApi.enums.AppointmentStatus;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.AppointmentRepository;
 import com.beautyManager.beautyManagerApi.repository.ClientRepository;
@@ -154,7 +155,7 @@ public class ReviewServiceImpl implements ReviewService {
         if (appointment.getDeletedAt() != null) {
             throw new IllegalArgumentException("La cita asociada no está disponible");
         }
-        if (!"completada".equals(appointment.getStatus())) {
+        if (appointment.getStatus() != AppointmentStatus.completada) {
             throw new IllegalArgumentException("Solo se pueden reseñar citas completadas (estado actual: " + appointment.getStatus() + ")");
         }
     }

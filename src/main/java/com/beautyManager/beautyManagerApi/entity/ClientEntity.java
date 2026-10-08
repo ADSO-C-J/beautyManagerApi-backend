@@ -1,11 +1,14 @@
 package com.beautyManager.beautyManagerApi.entity;
 
+import com.beautyManager.beautyManagerApi.enums.ClientFrequency;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "clients")
@@ -29,7 +32,8 @@ public class ClientEntity {
     @Column(name = "birth_date")
     private LocalDate birthDate;
     private String address;
-    private String frequency;
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    private ClientFrequency frequency;
     @Column(name = "total_visits", nullable = false)
     private Integer totalVisits;
     @Column(name = "total_spent", nullable = false, precision = 10, scale = 2)

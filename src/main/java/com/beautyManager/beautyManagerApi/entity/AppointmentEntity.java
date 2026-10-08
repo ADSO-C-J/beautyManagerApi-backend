@@ -1,9 +1,14 @@
 package com.beautyManager.beautyManagerApi.entity;
 
+import com.beautyManager.beautyManagerApi.enums.AppointmentStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "appointments")
@@ -26,7 +31,9 @@ public class AppointmentEntity {
     private LocalDateTime scheduledAt;
     @Column(name = "ends_at", nullable = false)
     private LocalDateTime endsAt;
-    private String status;
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
+    private AppointmentStatus status;
     private String notes;
     @Column(name = "cancellation_reason")
     private String cancellationReason;
@@ -36,8 +43,10 @@ public class AppointmentEntity {
     private LocalDateTime cancelledAt;
     @Column(name = "created_by")
     private UUID createdBy;
-    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     @Column(name = "deleted_at")

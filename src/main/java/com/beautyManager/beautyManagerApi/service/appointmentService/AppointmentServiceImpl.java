@@ -6,6 +6,7 @@ import com.beautyManager.beautyManagerApi.dto.appointmentDto.CreateAppointmentRe
 import com.beautyManager.beautyManagerApi.dto.appointmentDto.UpdateAppointmentRequestDTO;
 import com.beautyManager.beautyManagerApi.entity.AppointmentEntity;
 import com.beautyManager.beautyManagerApi.entity.AppointmentServiceEntity;
+import com.beautyManager.beautyManagerApi.enums.AppointmentStatus;
 import com.beautyManager.beautyManagerApi.exception.InvalidRequestException;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.AppointmentRepository;
@@ -103,7 +104,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .staffId(dto.getStaffId())
                 .scheduledAt(scheduledAt)
                 .endsAt(scheduledAt.plusMinutes(60))
-                .status("confirmada")
+                .status(AppointmentStatus.confirmada)
                 .notes(buildNotes(dto.getService(), dto.getNotes()))
                 .build();
 
@@ -119,8 +120,25 @@ public class AppointmentServiceImpl implements AppointmentService {
         appt.setScheduledAt(scheduledAt);
         appt.setEndsAt(scheduledAt.plusMinutes(60));
         appt.setStaffId(dto.getStaffId());
-        appt.setStatus(dto.getStatus());
         appt.setNotes(buildNotes(dto.getService(), dto.getNotes()));
+
+        // Coherencia con el CHECK "cancelled_fields_consistent": si el estado pasa a
+        // 'cancelada' hay que rellenar cancelled_at (y cancelled_by); al revés,
+        // cualquier otro estado debe limpiar esos campos.
+        AppointmentStatus newStatus = parseStatus(dto.getStatus());
+        appt.setStatus(newStatus);
+        if (newStatus == AppointmentStatus.cancelada) {
+            if (appt.getCancelledAt() == null) {
+                appt.setCancelledAt(LocalDateTime.now());
+            }
+            if (appt.getCancelledBy() == null) {
+                appt.setCancelledBy(currentUserId());
+            }
+        } else {
+            appt.setCancelledAt(null);
+            appt.setCancelledBy(null);
+            appt.setCancellationReason(null);
+        }
 
         return toDTO(appointmentRepository.save(appt));
     }
@@ -141,7 +159,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         dto.setStylistId(appointment.getStaffId());
         dto.setScheduledAt(appointment.getScheduledAt());
         dto.setEndsAt(appointment.getEndsAt());
-        dto.setStatus(appointment.getStatus());
+        dto.setStatus(appointment.getStatus() != null ? appointment.getStatus().name() : null);
         dto.setNotes(appointment.getNotes());
         if (appointment.getNotes() != null && appointment.getNotes().contains("|")) {
             dto.setService(appointment.getNotes().split("\\|")[0].trim());
@@ -207,5 +225,28 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private String buildNotes(String service, String notes) {
         return service + (notes != null ? " | " + notes : "");
+    }
+
+    /** Convierte el status recibido (String del DTO) al enum de la BD. */
+    private AppointmentStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return AppointmentStatus.valueOf(status);
+        } catch (IllegalArgumentException ex) {
+            throw new InvalidRequestException("Estado de cita inválido: " + status);
+        }
+    }
+
+    /** Id del usuario autenticado (claim del contexto de seguridad), o null si no hay sesión. */
+    private UUID currentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null || auth.getName().isBlank()) {
+            return null;
+        }
+        return userRepository.findByEmailAndDeletedAtIsNull(auth.getName())
+                .map(user -> user.getId())
+                .orElse(null);
     }
 }
