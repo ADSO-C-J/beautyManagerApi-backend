@@ -5,6 +5,7 @@ import com.beautyManager.beautyManagerApi.dto.clientDto.CreateClientRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.clientDto.UpdateClientRequestDTO;
 import com.beautyManager.beautyManagerApi.entity.ClientEntity;
 import com.beautyManager.beautyManagerApi.entity.User;
+import com.beautyManager.beautyManagerApi.enums.ClientFrequency;
 import com.beautyManager.beautyManagerApi.enums.UserRole;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.BusinessRepository;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -102,6 +104,8 @@ public class ClientServiceImpl implements ClientService {
         if (userRepository.existsByEmailAndDeletedAtIsNull(dto.getEmail())){
             throw  new IllegalArgumentException("Ya se encuentra registrado este email"+ dto.getEmail());
         }
+        // Se crea el usuario (para que el cliente pueda autenticarse) y el registro
+        // de la tabla 'clients' (que es la fuente del listado y de las citas).
         User user = User.builder()
                 .name(dto.getName())
                 .email(dto.getEmail())
@@ -110,48 +114,81 @@ public class ClientServiceImpl implements ClientService {
                 .role(UserRole.cliente)
                 .isActive(true)
                 .build();
-        return toDTO(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+
+        ClientEntity client = ClientEntity.builder()
+                .userId(savedUser.getId())
+                .businessId(resolveBusinessId())
+                .name(dto.getName())
+                .email(dto.getEmail())
+                .phone(dto.getPhone())
+                .frequency(ClientFrequency.baja) // NOT NULL en la BD; cliente nuevo = baja
+                .totalVisits(0)
+                .totalSpent(BigDecimal.ZERO)
+                .isActive(true)
+                .build();
+        return toDTO(clientRepository.save(client));
     }
 
     @Override
     public ClientResponseDTO update(UUID id, UpdateClientRequestDTO dto) {
-        User user = findActiveClientOrThrow(id);
-        validateEmailNotTaken(dto.getEmail(), id);
+        ClientEntity client = clientRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado por Id: " + id));
+        validateEmailNotTaken(dto.getEmail(), client.getUserId());
 
-        user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
-        user.setPhone(dto.getPhone());
+        client.setName(dto.getName());
+        client.setEmail(dto.getEmail());
+        client.setPhone(dto.getPhone());
 
-        return toDTO(userRepository.save(user));
+        // Sincroniza el usuario asociado (si existe) para no dejarlos divergentes.
+        if (client.getUserId() != null) {
+            userRepository.findByIdAndDeletedAtIsNull(client.getUserId()).ifPresent(user -> {
+                user.setName(dto.getName());
+                user.setEmail(dto.getEmail());
+                user.setPhone(dto.getPhone());
+                userRepository.save(user);
+            });
+        }
+
+        return toDTO(clientRepository.save(client));
     }
 
     @Override
     public ClientResponseDTO partialUpdate(UUID id, UpdateClientRequestDTO dto) {
-        User user = findActiveClientOrThrow(id);
+        ClientEntity client = clientRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado por Id: " + id));
 
         // PATCH: solo se tocan los campos que vienen no-null.
         if (dto.getName() != null) {
-            user.setName(dto.getName());
+            client.setName(dto.getName());
         }
         if (dto.getEmail() != null) {
-            user.setEmail(dto.getEmail());
+            client.setEmail(dto.getEmail());
         }
         if (dto.getPhone() != null) {
-            user.setPhone(dto.getPhone());
+            client.setPhone(dto.getPhone());
         }
 
-        return toDTO(userRepository.save(user));
+        return toDTO(clientRepository.save(client));
     }
+
     @Override
     public void delete(UUID id) {
-        User user = findActiveClientOrThrow(id);
-        user.setDeletedAt(LocalDateTime.now()); // borrado lógico, consistente con el resto del proyecto
-        userRepository.save(user);
-    }
-    private User findActiveClientOrThrow(UUID id) {
-        return userRepository.findByIdAndDeletedAtIsNull(id)
-                .filter(u -> u.getRole() == UserRole.cliente)
+        // Borrado lógico sobre la misma entidad que lista/findById (tabla 'clients').
+        ClientEntity client = clientRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado por Id: " + id));
+        client.setDeletedAt(LocalDateTime.now());
+        client.setIsActive(false);
+        clientRepository.save(client);
+
+        // Se desactiva también el usuario asociado para que no pueda iniciar sesión.
+        if (client.getUserId() != null) {
+            userRepository.findByIdAndDeletedAtIsNull(client.getUserId()).ifPresent(user -> {
+                user.setIsActive(false);
+                user.setDeletedAt(LocalDateTime.now());
+                userRepository.save(user);
+            });
+        }
     }
 
 
@@ -161,15 +198,6 @@ public class ClientServiceImpl implements ClientService {
         dto.setName(client.getName());
         dto.setEmail(client.getEmail());
         dto.setPhone(client.getPhone());
-        return dto;
-    }
-
-    private ClientResponseDTO toDTO(User user) {
-        ClientResponseDTO dto = new ClientResponseDTO();
-        dto.setId(user.getId());
-        dto.setName(user.getName());
-        dto.setEmail(user.getEmail());
-        dto.setPhone(user.getPhone());
         return dto;
     }
 
