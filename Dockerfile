@@ -31,9 +31,9 @@ WORKDIR /app
 COPY --from=build /build/target/*.jar app.jar
 
 # --- Endpoints ---
-# 8080: HTTP de la API
+# 8082: HTTP de la API
 # 5005: JMX / DevTools remoto (opcional, ver compose)
-EXPOSE 8080
+EXPOSE 8082
 
 USER appuser
 
@@ -42,7 +42,7 @@ ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
 
 # Actuator/health sirve como healthcheck del contenedor.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD ["sh", "-c", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+  CMD ["sh", "-c", "curl -fsS http://localhost:8082/actuator/health || exit 1"]
 
 # exec form con sh para poder expanding JAVA_OPTS sin requerir un entrypoint.
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar \"$@\"", "--"]

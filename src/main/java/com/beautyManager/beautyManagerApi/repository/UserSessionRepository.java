@@ -16,5 +16,8 @@ public interface UserSessionRepository extends JpaRepository<UserSessionEntity, 
 
     Optional<UserSessionEntity> findByIdAndUserId(UUID id, UUID userId);
 
+    /** Busca una sesión por el hash del refresh token (para renovar el JWT). */
+    Optional<UserSessionEntity> findByRefreshToken(String refreshToken);
+
     long deleteByUserId(UUID userId);
 }

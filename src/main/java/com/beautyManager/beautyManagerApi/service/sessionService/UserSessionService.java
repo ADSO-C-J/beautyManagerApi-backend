@@ -23,4 +23,13 @@ public interface UserSessionService {
 
     /** Revoca todas las sesiones del usuario (logout en todos los dispositivos). */
     long revokeAllMySessions(String email);
+
+    /**
+     * Busca una sesión por el refresh token en claro (se compara su hash).
+     * Devuelve la entidad si existe; vacío si el token no corresponde a ninguna sesión.
+     */
+    java.util.Optional<com.beautyManager.beautyManagerApi.entity.UserSessionEntity> findByRawRefreshToken(String rawRefreshToken);
+
+    /** Elimina una sesión concreta (usado al rotar el refresh token). */
+    void deleteSession(com.beautyManager.beautyManagerApi.entity.UserSessionEntity session);
 }

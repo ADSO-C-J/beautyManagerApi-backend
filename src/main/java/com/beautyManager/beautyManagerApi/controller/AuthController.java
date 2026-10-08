@@ -2,6 +2,7 @@ package com.beautyManager.beautyManagerApi.controller;
 
 import com.beautyManager.beautyManagerApi.dto.auth.AuthResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.LoginRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.auth.RefreshRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.RegisterRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.RegisterResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.UserSummaryDTO;
@@ -40,6 +41,13 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<RegisterResponseDTO> register(@Valid @RequestBody RegisterRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(dto));
+    }
+
+    @Operation(summary = "Renovar token", description = "Recibe un refresh token válido y devuelve un nuevo JWT (rota el refresh token).")
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponseDTO> refresh(@Valid @RequestBody RefreshRequestDTO dto,
+                                                   jakarta.servlet.http.HttpServletRequest request) {
+        return ResponseEntity.ok(authService.refresh(dto, request.getRemoteAddr(), request.getHeader("User-Agent")));
     }
 
     @Operation(summary = "Cerrar sesión", description = "Revoca el token JWT actual para que deje de ser válido aunque no haya expirado. Requiere autenticación.")

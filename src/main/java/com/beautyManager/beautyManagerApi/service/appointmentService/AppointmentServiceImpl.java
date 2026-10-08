@@ -86,6 +86,15 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentResponseDTO create(CreateAppointmentRequestDTO dto) {
+        // Validar referencias antes de guardar para no disparar una violación de
+        // clave foránea (que se propagaba a /error y se enmascaraba como 401).
+        if (dto.getClientId() == null || !clientRepository.existsById(dto.getClientId())) {
+            throw new ResourceNotFoundException("Cliente no encontrado con id: " + dto.getClientId());
+        }
+        if (dto.getStaffId() == null || !staffRepository.existsById(dto.getStaffId())) {
+            throw new ResourceNotFoundException("Estilista no encontrado con id: " + dto.getStaffId());
+        }
+
         LocalDateTime scheduledAt = parseScheduledAt(dto.getDate(), dto.getTime());
 
         AppointmentEntity entity = AppointmentEntity.builder()

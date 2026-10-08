@@ -1,5 +1,6 @@
 package com.beautyManager.beautyManagerApi.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -35,6 +36,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Map<String, Object>> handleAuthentication(AuthenticationException ex) {
         return buildResponse(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
+    }
+
+    /**
+     * Violaciones de integridad (p. ej. una clave foránea inexistente al crear una
+     * cita). Sin este handler, la excepción se propaga a /error y Spring Security
+     * la convertía en un 401 engañoso; aquí devolvemos un 409 con la causa.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                "No se pudo guardar el recurso: referencia inexistente o dato duplicado");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

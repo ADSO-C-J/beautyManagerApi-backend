@@ -52,9 +52,12 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedEntryPoint))
             .authorizeHttpRequests(auth -> auth
                     // Endpoints públicos de autenticación
-                    .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                    .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh").permitAll()
                     // Documentación OpenAPI / Swagger UI (pública)
                     .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-ui.html/**").permitAll()
+                    // Página de error de Spring: debe ser pública para no enmascarar
+                    // errores reales (400/500) como 401 en peticiones no autenticadas.
+                    .requestMatchers("/error").permitAll()
                     // Solo 'health' es publico: lo usa el HEALTHCHECK del contenedor
                     // (docker) y los orquestadores. El resto de Actuator
                     // (/actuator/env, /metrics, ...) sigue requiriendo token.

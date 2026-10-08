@@ -67,6 +67,21 @@ public class UserSessionServiceImpl implements UserSessionService {
         return userSessionRepository.deleteByUserId(userId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<UserSessionEntity> findByRawRefreshToken(String rawRefreshToken) {
+        if (rawRefreshToken == null || rawRefreshToken.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return userSessionRepository.findByRefreshToken(sha256(rawRefreshToken));
+    }
+
+    @Override
+    @Transactional
+    public void deleteSession(UserSessionEntity session) {
+        userSessionRepository.delete(session);
+    }
+
     private UUID resolveUserId(String email) {
         return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .map(com.beautyManager.beautyManagerApi.entity.User::getId)

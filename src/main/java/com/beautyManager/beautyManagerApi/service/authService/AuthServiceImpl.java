@@ -2,12 +2,15 @@ package com.beautyManager.beautyManagerApi.service.authService;
 
 import com.beautyManager.beautyManagerApi.dto.auth.AuthResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.LoginRequestDTO;
+import com.beautyManager.beautyManagerApi.dto.auth.RefreshRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.RegisterRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.RegisterResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.UserSummaryDTO;
 import com.beautyManager.beautyManagerApi.entity.StaffEntity;
 import com.beautyManager.beautyManagerApi.entity.User;
+import com.beautyManager.beautyManagerApi.entity.UserSessionEntity;
 import com.beautyManager.beautyManagerApi.enums.UserRole;
+import com.beautyManager.beautyManagerApi.exception.InvalidRequestException;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.BusinessRepository;
 import com.beautyManager.beautyManagerApi.repository.StaffRepository;
@@ -19,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -115,6 +119,51 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         return toUserSummary(user, resolveBusinessId(user));
+    }
+
+    @Override
+    @Transactional
+    public AuthResponseDTO refresh(RefreshRequestDTO dto, String ipAddress, String userAgent) {
+        // 1. Localizar la sesión por el hash del refresh token recibido.
+        UserSessionEntity session = userSessionService
+                .findByRawRefreshToken(dto.getRefreshToken())
+                .orElseThrow(() -> new InvalidRequestException("Refresh token inválido"));
+
+        // 2. Rechazar sesiones expiradas.
+        if (session.getExpiresAt() == null || session.getExpiresAt().isBefore(LocalDateTime.now())) {
+            userSessionService.deleteSession(session);
+            throw new InvalidRequestException("El refresh token ha expirado");
+        }
+
+        // 3. Cargar el usuario dueño de la sesión y validar que siga activo.
+        User user = userRepository.findByIdAndDeletedAtIsNull(session.getUserId())
+                .orElseThrow(() -> new InvalidRequestException("Usuario no encontrado"));
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new InvalidRequestException("El usuario está inactivo");
+        }
+
+        // 4. Rotación de refresh token: se elimina el anterior y se emite uno nuevo.
+        userSessionService.deleteSession(session);
+
+        UUID businessId = resolveBusinessId(user);
+        String token = jwtService.generateToken(user, businessId != null ? businessId.toString() : null);
+        String newRefreshToken = UUID.randomUUID() + "." + UUID.randomUUID();
+        long expiresInMillis = jwtService.getExpirationMs();
+        userSessionService.createSession(
+                user.getId(),
+                newRefreshToken,
+                LocalDateTime.now().plusNanos(expiresInMillis * 1_000_000L),
+                (ipAddress == null || ipAddress.isBlank()) ? null : ipAddress,
+                (userAgent == null || userAgent.isBlank()) ? null : userAgent);
+
+        return AuthResponseDTO.builder()
+                .token(token)
+                .refreshToken(newRefreshToken)
+                .expiresIn(expiresInMillis)
+                .tokenType("Bearer")
+                .roles(List.of("ROLE_" + user.getRole().name()))
+                .user(toUserSummary(user, businessId))
+                .build();
     }
 
     @Override
