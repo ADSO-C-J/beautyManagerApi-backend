@@ -3,6 +3,7 @@ package com.beautyManager.beautyManagerApi.config;
 import com.beautyManager.beautyManagerApi.security.JwtAuthenticationFilter;
 import com.beautyManager.beautyManagerApi.security.UnauthorizedEntryPoint;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -28,6 +30,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UnauthorizedEntryPoint unauthorizedEntryPoint;
+
+    /**
+     * Orígenes extra permitidos por CORS, separados por coma (ej. en Render:
+     * CORS_ALLOWED_ORIGINS=https://otro-dominio.com,https://*.vercel.app).
+     * Permite añadir dominios en producción sin recompilar.
+     */
+    @Value("${CORS_ALLOWED_ORIGINS:}")
+    private String corsAllowedOrigins;
 
     /**
      * Configura el encoder de contraseñas usando BCrypt.
@@ -92,11 +102,22 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         // Patrones de origen: cubre cualquier puerto de localhost/127.0.0.1 (Vite usa
         // 5173 por defecto pero salta al siguiente puerto libre si está ocupado).
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:[*]",
-                "http://127.0.0.1:[*]"
-        ));
-        // Orígenes de producción previstos (despliegue del frontend).
+        List<String> originPatterns = new ArrayList<>();
+        originPatterns.add("http://localhost:[*]");
+        originPatterns.add("http://127.0.0.1:[*]");
+        // Frontend desplegado en Vercel (producción + previews).
+        originPatterns.add("https://beauty-manager-seven.vercel.app");
+        originPatterns.add("https://*.vercel.app");
+        // Orígenes adicionales inyectados por variable de entorno (sin recompilar).
+        if (corsAllowedOrigins != null && !corsAllowedOrigins.isBlank()) {
+            for (String origin : corsAllowedOrigins.split(",")) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty()) {
+                    originPatterns.add(trimmed);
+                }
+            }
+        }
+        config.setAllowedOriginPatterns(originPatterns);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
