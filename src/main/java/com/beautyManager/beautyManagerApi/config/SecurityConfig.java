@@ -56,8 +56,10 @@ public class SecurityConfig {
                     // Documentación OpenAPI / Swagger UI (pública)
                     .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-ui.html/**").permitAll()
                     // Página de error de Spring: debe ser pública para no enmascarar
-                    // errores reales (400/500) como 401 en peticiones no autenticadas.
-                    .requestMatchers("/error").permitAll()
+                    // errores reales (400/404/409/500) como 401. El re-despacho interno a
+                    // /error pierde el contexto de autenticación, así que si esta ruta no
+                    // es pública CUALQUIER excepción del controlador se reporta como 401.
+                    .requestMatchers("/error", "/error/**").permitAll()
                     // Solo 'health' es publico: lo usa el HEALTHCHECK del contenedor
                     // (docker) y los orquestadores. El resto de Actuator
                     // (/actuator/env, /metrics, ...) sigue requiriendo token.
@@ -88,9 +90,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Patrones de origen: cubre cualquier puerto de localhost/127.0.0.1 (Vite usa
+        // 5173 por defecto pero salta al siguiente puerto libre si está ocupado).
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:[*]",
+                "http://127.0.0.1:[*]"
+        ));
+        // Orígenes de producción previstos (despliegue del frontend).
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
