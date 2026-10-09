@@ -91,7 +91,12 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentEntity payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pago no encontrado con id: " + id));
 
-        if (PaymentStatus.pagado.equals(payment.getStatus()) && !PaymentStatus.pagado.equals(dto.getStatus())) {
+        // Un pago 'pagado' solo puede permanecer pagado o pasar a 'reembolsado':
+        // el reembolso es la única transición de salida válida. No puede volver
+        // a 'pendiente' ni a 'fallido' (revertir lo cobrado sin reembolso).
+        if (PaymentStatus.pagado.equals(payment.getStatus())
+                && !PaymentStatus.pagado.equals(dto.getStatus())
+                && !PaymentStatus.reembolsado.equals(dto.getStatus())) {
             throw new IllegalArgumentException("No se puede revertir un pago ya registrado como pagado");
         }
 
@@ -120,10 +125,8 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentEntity payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pago no encontrado con id: " + id));
 
-        if (PaymentStatus.pagado.equals(payment.getStatus()) || PaymentStatus.reembolsado.equals(payment.getStatus())) {
-            throw new IllegalArgumentException("No se puede eliminar un pago ya registrado como pagado o reembolsado");
-        }
-
+        // Ninguna otra tabla referencia a payments, por lo que el borrado es
+        // seguro independientemente del estado del pago.
         paymentRepository.delete(payment);
     }
 

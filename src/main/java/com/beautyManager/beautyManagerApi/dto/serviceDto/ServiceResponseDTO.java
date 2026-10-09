@@ -12,4 +12,7 @@ public class ServiceResponseDTO {
     private Integer duration_min;
     private BigDecimal price;
     private String description;
+    // Enum TypeServices serializado en minúsculas (cabello, manos, pies, caballeros, facial, otro)
+    private String category;
+    private Boolean is_popular;
 }

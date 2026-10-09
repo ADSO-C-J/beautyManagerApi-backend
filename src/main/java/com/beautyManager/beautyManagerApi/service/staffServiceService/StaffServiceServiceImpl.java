@@ -133,6 +133,8 @@ public class StaffServiceServiceImpl implements StaffServiceService {
         dto.setDuration_min(service.getDurationMin());
         dto.setPrice(service.getPrice());
         dto.setDescription(service.getDescription());
+        dto.setCategory(service.getCategory() != null ? service.getCategory().name() : null);
+        dto.setIs_popular(service.getIsPopular());
         return dto;
     }
 

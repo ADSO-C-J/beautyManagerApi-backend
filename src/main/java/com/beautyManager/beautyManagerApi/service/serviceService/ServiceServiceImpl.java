@@ -26,6 +26,8 @@ public class ServiceServiceImpl implements ServiceService {
         dto.setPrice(service.getPrice());
         dto.setDescription(service.getDescription());
         dto.setDuration_min(service.getDurationMin());
+        dto.setCategory(service.getCategory() != null ? service.getCategory().name() : null);
+        dto.setIs_popular(service.getIsPopular());
         return dto;
     }
 
