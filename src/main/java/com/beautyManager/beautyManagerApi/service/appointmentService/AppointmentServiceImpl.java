@@ -215,10 +215,29 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .sum());
     }
 
+    /**
+     * Convierte date + time (strings del DTO) a LocalDateTime.
+     * Tolera variantes habituales del cliente:
+     *  - hora con un solo dígito: "8:00" / "9:30" -> "08:00" / "09:30"
+     *  - sin segundos: "08:00" -> "08:00:00"
+     *  - con segundos completos: "08:00:00" (se usa tal cual)
+     */
     private LocalDateTime parseScheduledAt(String date, String time) {
         try {
-            return LocalDateTime.parse(date + "T" + time);
-        } catch (DateTimeParseException e) {
+            String d = date == null ? "" : date.trim();
+            String t = time == null ? "" : time.trim();
+
+            // Normaliza la hora a HH:mm[:ss] con dos dígitos en la hora.
+            if (t.matches("\\d{1,2}:\\d{2}")) {
+                t = t + ":00";
+            }
+            if (t.matches("\\d{1,2}:.*")) {
+                String[] parts = t.split(":", 2);
+                t = String.format("%02d", Integer.parseInt(parts[0])) + ":" + parts[1];
+            }
+
+            return LocalDateTime.parse(d + "T" + t);
+        } catch (DateTimeParseException | NumberFormatException e) {
             throw new InvalidRequestException("Formato de fecha/hora inválido: " + date + "T" + time);
         }
     }
