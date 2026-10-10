@@ -2,11 +2,14 @@ package com.beautyManager.beautyManagerApi.service.userService;
 
 import com.beautyManager.beautyManagerApi.dto.userDto.UserResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.userDto.UserRequestDTO;
+import com.beautyManager.beautyManagerApi.entity.ClientEntity;
 import com.beautyManager.beautyManagerApi.entity.StaffEntity;
 import com.beautyManager.beautyManagerApi.entity.User;
+import com.beautyManager.beautyManagerApi.enums.ClientFrequency;
 import com.beautyManager.beautyManagerApi.enums.UserRole;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.BusinessRepository;
+import com.beautyManager.beautyManagerApi.repository.ClientRepository;
 import com.beautyManager.beautyManagerApi.repository.StaffRepository;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
     private final BusinessRepository businessRepository;
+    private final ClientRepository clientRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -70,6 +74,9 @@ public class UserServiceImpl implements UserService {
         // Un estilista necesita ficha en la tabla staff: sin ella las citas fallan
         // con 404 ('Estilista no encontrado') al agendarlo.
         syncStaffRecord(saved);
+        // Un cliente necesita ficha en la tabla clients: sin ella no aparece en el
+        // módulo Clientes ni puede agendar citas (clients.id != users.id).
+        syncClientRecord(saved);
         return toDTO(saved);
     }
 
@@ -92,6 +99,8 @@ public class UserServiceImpl implements UserService {
         // Cubre el cambio de rol hacia 'estilista' (requiere ficha) y la vuelta
         // desde 'estilista' (la ficha debe dejar de estar activa).
         syncStaffRecord(saved);
+        // Cubre el cambio de rol hacia 'cliente' (requiere ficha en 'clients').
+        syncClientRecord(saved);
         return toDTO(saved);
     }
 
@@ -109,6 +118,8 @@ public class UserServiceImpl implements UserService {
         // Desactiva también su ficha de personal para que deje de aparecer en la
         // agenda y no queden citas asignadas a un estilista inactivo.
         deactivateStaffRecord(user.getId());
+        // Igual con la ficha de cliente: si no, seguiría listado en módulo Clientes.
+        deactivateClientRecord(user.getId());
     }
 
     /**
@@ -156,6 +167,53 @@ public class UserServiceImpl implements UserService {
                 staff.setUpdatedAt(LocalDateTime.now());
                 staffRepository.save(staff);
             }
+        });
+    }
+
+    /**
+     * Garantiza que un usuario con rol 'cliente' tenga ficha en la tabla 'clients'.
+     * Es el registro que lista el módulo Clientes del administrador y al que
+     * apuntan las citas (clients.id != users.id); sin él el usuario registrado
+     * no aparecía en ningún sitio.
+     * Se ejecuta dentro de la misma transacción que el guardado del usuario.
+     * Si el rol no es 'cliente' no se toca nada: el historial de citas previas
+     * debe seguir visible.
+     */
+    private void syncClientRecord(User user) {
+        if (user.getRole() != UserRole.cliente) {
+            return;
+        }
+        // OJO: clients.user_id es UNIQUE, así que se comprueba también si la fila
+        // existe borrada lógicamente; en ese caso no se crea otra (la decisión de
+        // si debe reaparecer le corresponde al administrador, no a este método).
+        if (clientRepository.findByUserId(user.getId()).isPresent()) {
+            return;
+        }
+        UUID businessId = resolveDefaultBusinessId();
+        if (businessId == null) {
+            // clients.business_id es NOT NULL: sin negocio no se puede crear la ficha.
+            log.warn("No se creó la ficha de cliente para {}: no hay negocios configurados", user.getEmail());
+            return;
+        }
+        clientRepository.save(ClientEntity.builder()
+                .userId(user.getId())
+                .businessId(businessId)
+                .name(user.getName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .frequency(ClientFrequency.baja) // NOT NULL en la BD; cliente nuevo = baja
+                .totalVisits(0)
+                .totalSpent(BigDecimal.ZERO)
+                .isActive(true)
+                .build());
+    }
+
+    /** Borra (lógicamente) la ficha de cliente asociada al usuario eliminado. */
+    private void deactivateClientRecord(UUID userId) {
+        clientRepository.findByUserIdAndDeletedAtIsNull(userId).ifPresent(client -> {
+            client.setDeletedAt(LocalDateTime.now());
+            client.setIsActive(false);
+            clientRepository.save(client);
         });
     }
 

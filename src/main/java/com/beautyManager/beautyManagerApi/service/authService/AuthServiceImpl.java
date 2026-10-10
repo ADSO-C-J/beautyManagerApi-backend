@@ -6,13 +6,16 @@ import com.beautyManager.beautyManagerApi.dto.auth.RefreshRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.RegisterRequestDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.RegisterResponseDTO;
 import com.beautyManager.beautyManagerApi.dto.auth.UserSummaryDTO;
+import com.beautyManager.beautyManagerApi.entity.ClientEntity;
 import com.beautyManager.beautyManagerApi.entity.StaffEntity;
 import com.beautyManager.beautyManagerApi.entity.User;
 import com.beautyManager.beautyManagerApi.entity.UserSessionEntity;
+import com.beautyManager.beautyManagerApi.enums.ClientFrequency;
 import com.beautyManager.beautyManagerApi.enums.UserRole;
 import com.beautyManager.beautyManagerApi.exception.InvalidRequestException;
 import com.beautyManager.beautyManagerApi.exception.ResourceNotFoundException;
 import com.beautyManager.beautyManagerApi.repository.BusinessRepository;
+import com.beautyManager.beautyManagerApi.repository.ClientRepository;
 import com.beautyManager.beautyManagerApi.repository.StaffRepository;
 import com.beautyManager.beautyManagerApi.repository.UserRepository;
 import com.beautyManager.beautyManagerApi.security.JwtService;
@@ -24,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +36,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    // Fallback por si no se puede resolver el negocio del usuario autenticado.
+    private static final UUID DEFAULT_BUSINESS_ID =
+            UUID.fromString("b0000000-0000-0000-0000-000000000001");
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -39,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
     private final RevokedTokenService revokedTokenService;
     private final StaffRepository staffRepository;
     private final BusinessRepository businessRepository;
+    private final ClientRepository clientRepository;
 
     @Override
     public AuthResponseDTO login(LoginRequestDTO dto, String ipAddress, String userAgent) {
@@ -88,6 +97,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public RegisterResponseDTO register(RegisterRequestDTO dto) {
         if (userRepository.existsByEmailAndDeletedAtIsNull(dto.getEmail())) {
             throw new IllegalArgumentException("Ya existe un usuario con el email: " + dto.getEmail());
@@ -105,6 +115,22 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         User saved = userRepository.save(user);
+
+        // Además del usuario (que solo sirve para autenticarse) se crea la ficha en
+        // la tabla 'clients': es la fuente del módulo Clientes del administrador y
+        // el id que usan citas, análisis faciales y reseñas (clients.id != users.id).
+        // Sin esta fila el cliente registrado no aparecía en ningún listado.
+        clientRepository.save(ClientEntity.builder()
+                .userId(saved.getId())
+                .businessId(resolveClientBusinessId(saved))
+                .name(saved.getName())
+                .email(saved.getEmail())
+                .phone(saved.getPhone())
+                .frequency(ClientFrequency.baja) // NOT NULL en la BD; cliente nuevo = baja
+                .totalVisits(0)
+                .totalSpent(BigDecimal.ZERO)
+                .isActive(true)
+                .build());
 
         return RegisterResponseDTO.builder()
                 .id(saved.getId())
@@ -213,6 +239,16 @@ public class AuthServiceImpl implements AuthService {
                         .findFirst()
                         .map(b -> b.getId())
                         .orElse(null));
+    }
+
+    /**
+     * Negocio al que asignar la ficha de un cliente recién registrado: el del staff
+     * si lo hubiera; si no, el primero creado; y como último recurso el negocio por
+     * defecto (la columna clients.business_id es NOT NULL, no se puede dejar vacía).
+     */
+    private UUID resolveClientBusinessId(User user) {
+        UUID businessId = resolveBusinessId(user);
+        return businessId != null ? businessId : DEFAULT_BUSINESS_ID;
     }
 
     private UserSummaryDTO toUserSummary(User user, UUID businessId) {

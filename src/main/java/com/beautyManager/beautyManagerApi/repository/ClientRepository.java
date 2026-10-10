@@ -13,6 +13,16 @@ import java.util.Optional;
 public interface ClientRepository extends JpaRepository<ClientEntity, UUID> {
     Optional<ClientEntity> findByIdAndDeletedAtIsNull(UUID id);
 
+    /** Ficha de un usuario concreto (users.id -> clients.user_id); la usa la sincronización de usuarios. */
+    Optional<ClientEntity> findByUserIdAndDeletedAtIsNull(UUID userId);
+
+    /**
+     * Ficha de un usuario sin filtrar por borrado lógico. Hace falta porque
+     * clients.user_id es UNIQUE: existe una fila (aunque esté borrada) y no se
+     * puede crear otra.
+     */
+    Optional<ClientEntity> findByUserId(UUID userId);
+
     // Vista global: la usa el administrador, que no esta acotado a un business_id.
     List<ClientEntity> findAllByDeletedAtIsNull();
 
